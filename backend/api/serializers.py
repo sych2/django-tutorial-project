@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 from .models import Note
 
-class UserSerilalizer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "password"]
@@ -12,7 +12,7 @@ class UserSerilalizer(serializers.ModelSerializer):
             user - User.objects.create_user(**validated_data)
             return User
         
-class NoteSerializer(serializers.ModelSelializer):
+class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
         fields = ["id", "title", "content", "created_at", "auther"]

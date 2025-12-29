@@ -1,12 +1,32 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
 from rest_framework import generics
-from .serializers import UserSerilalizer
+from .serializers import UserSerializer, NoteSerializer
+from .models import Note
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
+#create an new note
+class NoteListCreate(generics.ListCreateAPIView):
+    serilizer_class = NoteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if serializer.is_valid():
+            serializer.save(author.self.request.user)
+        else:
+            print(serializer.error)
+class NoteDelete(generics.DestroyAPIView):
+    serializer_class = NoteSerializer
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        user = self.request.user
+        return Note.objects.filter(author=user)
+    
+    
+#create a new user
 class CreateUserView(generics.CreateAPIView):
-    queryset = User.Objects.all()
-    serializer_class = User
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
 # Create your views here.
