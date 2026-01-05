@@ -38,7 +38,7 @@ def get_default_profile_image():
 class account(AbstractBaseUser):
     email=models.EmailField(verbose_name="email", max_length=60, unique=True)
     username=models.CharField(max_length=30, unique=True)
-    date_joined=models.DateTimeField(verbose_name="data joined", auto_now=True)
+    date_joined=models.DateTimeField(verbose_name="data joined", auto_now_add=True)
     last_joined=models.DateTimeField(verbose_name="last joined", auto_now=True)
     is_admin=models.BooleanField(default=False)
     is_active=models.BooleanField(default=False)

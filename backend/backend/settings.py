@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'corsheaders'
 ]
 
+AUth_USER_MODEL = "api.account"
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
