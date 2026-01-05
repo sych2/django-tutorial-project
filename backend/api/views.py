@@ -12,11 +12,11 @@ class NoteListCreate(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         if serializer.is_valid():
-            serializer.save(author.self.request.user)
+            serializer.save(author=self.request.user)
         else:
             print(serializer.error)
     def get_queryset(self):
-        user -self.request.user
+        user=self.request.user
         return Note.Objects.filter(author=user)
           
 
