@@ -1,5 +1,57 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AbstractBaseUser, BaseUserManager
+
+
+class MyAccountManager(BaseUserManager):
+    def create_user(self, email, username, password=None):
+        if not email:
+            raise ValueError("Users must have an email address.")
+        if not username:
+            raise valueError("user must have a username.")
+        user = self.model(
+            email=self.normalize_email(email),
+            username=username,
+
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+def get_profile_image_filepath(self, filename):
+    return f'profile_images/{self.pk}/{"profile_image.png"}'
+
+def get_default_profile_image():
+    return "codingwithmitch/logo_1080.png"
+
+
+class account(AbstractBaseUser):
+    email=models.EmailField(verbose_name="email", max_length=60, unuique=True)
+    username=models.CharField(maxlength=30, unique=True)
+    date_joined=models.DateTimeField(verbose_name="data joined", auto_now_true=True)
+    last_joined=models.DateTimeField(verbose_name="last joined", auto_now_true=True)
+    is_admin=models.BooleanField(default=False)
+    is_active=models.BooleanField(default=False)
+    is_staff=models.BooleanField(default=False)
+    is_superuser=models.BooleanField(default=False)
+    profile_image=models.ImageField(max_length=255, upload_to=get_profile_image_filepath)
+    hide_email=models.BooleanField(default=True)
+   
+   #Required to create an account 
+    USERMNAME_FIELD="email"
+    REQUIRED_FIELDS=["username"]
+
+    #default return value if dont access any individual field
+    def __str__(self):
+        return self.username
+    def get_profile_image_filename(self):
+        return str(self.profile_image)[str(self.profile_image).index(f'profile_images/{self.pk}'):]
+    #deafult permissions
+    def has_perm(self, perm, obj=None):
+        return self.is_admin
+    def has_module_perms(self, app_label):
+        return True
+    
+
+
+
 
 class Note(models.Model):
     title = models.CharField(max_length=100)
