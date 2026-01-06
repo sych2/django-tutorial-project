@@ -7,7 +7,7 @@ class MyAccountManager(BaseUserManager):
         if not email:
             raise ValueError("Users must have an email address.")
         if not username:
-            raise ValueErroralueError("user must have a username.")
+            raise ValueError("user must have a username.")
         user = self.model(
             email=self.normalize_email(email),
             username=username,
@@ -39,7 +39,7 @@ class account(AbstractBaseUser):
     email=models.EmailField(verbose_name="email", max_length=60, unique=True)
     username=models.CharField(max_length=30, unique=True)
     date_joined=models.DateTimeField(verbose_name="data joined", auto_now_add=True)
-    last_joined=models.DateTimeField(verbose_name="last joined", auto_now=True)
+    last_login=models.DateTimeField(verbose_name="last joined", auto_now=True)
     is_admin=models.BooleanField(default=False)
     is_active=models.BooleanField(default=False)
     is_staff=models.BooleanField(default=False)
@@ -49,7 +49,7 @@ class account(AbstractBaseUser):
    
     objects = MyAccountManager()
    #Required to create an account 
-    USERMNAME_FIELD="email"
+    USERNAME_FIELD="email"
     REQUIRED_FIELDS=["username"]
 
     #default return value if dont access any individual field
