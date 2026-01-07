@@ -38,21 +38,6 @@ class MyAccountManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-
-# -----------------------------
-# Helpers
-# -----------------------------
-def profile_image_upload_path(instance, filename):
-    return f"profile_images/{instance.id}/profile.png"
-
-
-def default_profile_image():
-    return "profile_images/default.png"
-
-
-# -----------------------------
-# Custom User Model
-# -----------------------------
 class account(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=60, unique=True)
     username = models.CharField(max_length=30, unique=True)
@@ -84,3 +69,18 @@ class account(AbstractBaseUser, PermissionsMixin):
 
     def has_module_perms(self, app_label):
         return True
+
+# -----------------------------
+# Helpers
+# -----------------------------
+def profile_image_upload_path(instance, filename):
+    return f"profile_images/{instance.id}/profile.png"
+
+
+def default_profile_image():
+    return "profile_images/default.png"
+
+
+# -----------------------------
+# Custom User Model
+# -----------------------------
