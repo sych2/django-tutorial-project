@@ -10,7 +10,7 @@ from django.conf import settings
 # -----------------------------
 # Custom User Manager
 # -----------------------------
-class AccountManager(BaseUserManager):
+class MyAccountManager(BaseUserManager):
     def create_user(self, email, username, password=None):
         if not email:
             raise ValueError("Users must have an email address")
@@ -71,7 +71,7 @@ class account(AbstractBaseUser, PermissionsMixin):
     )
     hide_email = models.BooleanField(default=True)
 
-    objects = AccountManager()
+    objects = MyAccountManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
