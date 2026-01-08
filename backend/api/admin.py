@@ -1,21 +1,70 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from .models import account
 
-from api.models import account
 
+@admin.register(account)
 class AccountAdmin(UserAdmin):
-    list_display = ('email', 'username','date_joined','last_login', 'is_admin', 'is_staff')
-    search_fields = ('email', 'username')
-    readonly_fields = ('id', 'date_joined', 'last_login')
-
-    filter_horizontal = ()
-    list_filter = (
-        "is_active",
+    # Fields shown in admin list view
+    list_display = (
+        "email",
+        "username",
+        "is_admin",
         "is_staff",
-        "is_superuser",
+        "is_active",
+        "date_joined",
     )
-    fieldsets = ()
-admin.site.register(account, AccountAdmin)
 
-# Register your models here.
- 
+    list_filter = (
+        "is_admin",
+        "is_staff",
+        "is_active",
+    )
+
+    search_fields = (
+        "email",
+        "username",
+    )
+
+    ordering = ("email",)
+    filter_horizontal = ("groups", "user_permissions")
+
+    # Field layout when viewing/editing a user
+    fieldsets = (
+        (None, {
+            "fields": ("email", "username", "password")
+        }),
+        ("Personal Info", {
+            "fields": ("profile_image", "hide_email")
+        }),
+        ("Permissions", {
+            "fields": (
+                "is_active",
+                "is_staff",
+                "is_admin",
+                "groups",
+                "user_permissions",
+            )
+        }),
+        ("Important Dates", {
+            "fields": ("last_login", "date_joined")
+        }),
+    )
+
+    # Field layout when creating a new user
+    add_fieldsets = (
+        (None, {
+            "classes": ("wide",),
+            "fields": (
+                "email",
+                "username",
+                "password1",
+                "password2",
+                "is_active",
+                "is_staff",
+                "is_admin",
+            ),
+        }),
+    )
+
+    readonly_fields = ("date_joined", "last_login")

@@ -7,5 +7,5 @@ class ApiConfig(AppConfig):
 
 class AccountConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "api.Account"
-    label = "Acount"   
+    name = "api.account"
+    label = "acount"   
