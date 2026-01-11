@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',
     'cart',
+    'store',
     'rest_framework',
     'corsheaders'
 ]
