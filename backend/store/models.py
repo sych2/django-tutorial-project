@@ -1,5 +1,6 @@
+from datetime import datetime
 from django.db import models
-import datetime
+from django.conf import settings
 
 # Create your models here.
 class Category(models.Model):
@@ -35,7 +36,7 @@ class Order(models.Model):
     qualtity = models.IntegerField(default=1)
     address = models.CharField(max_length=100, default='', blank=True)
     phone = models.CharField(max_length=50)
-    date = models.DateTimeField(default=datetime.datetime.today)
+    date = models.DateField(default= datetime.datetime.today)
     status = models.BooleanField(default=False)
 
     def __str__(self):
