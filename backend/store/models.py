@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from django.db import models
 from django.conf import settings
 
@@ -21,13 +21,13 @@ class Customer(models.Model):
 #All of our products
 class Product(models.Model):
     name = models.CharField(max_length=100)
-    price = models.DecimalField(default = 0, decimal_places=2, max_digits=6 )
+    price = models.DecimalField(default = 0, decimal_places=2, max_digits=10 )
     category = models.ForeignKey(Category, on_delete=models.CASCADE, default=1) 
     description = models.CharField(max_length=250, default='', blank = True, null= True )
     image = models.ImageField(upload_to='uploads/products/' )
     
     def __str__(self):
-        return self.email
+        return self.name
 
 #Customer Orders
 class Order(models.Model):
