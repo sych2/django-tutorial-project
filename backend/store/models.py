@@ -7,7 +7,11 @@ class Category(models.Model):
     name = models.CharField(max_length=50)
 
     def __str__(self):
-        return self.name  
+        return self.name
+    #change to plural
+    class Meta:
+        verbose_name_plural = 'cartegories'
+
 class Customer(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
@@ -26,6 +30,11 @@ class Product(models.Model):
     description = models.CharField(max_length=250, default='', blank = True, null= True )
     image = models.ImageField(upload_to='uploads/products/' )
     
+    #add sale
+    is_sale = models.BooleanField(default= False)
+    sale_price = models.DecimalField(default= 0, decimal_places= 2, max_digits= 10)
+
+
     def __str__(self):
         return self.name
 
