@@ -52,5 +52,4 @@ def register_user(request):
     else:
         messages.success(request, ("registration failed please try again"))
         return redirect('register')
-
     return render(request, 'register.html', {'form':form})
