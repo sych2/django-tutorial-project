@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from .models import Product 
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from .forms import SignUpForm
 # Create your views here.
@@ -57,3 +59,8 @@ def register_user(request):
     
     # This MUST be outside the if/else to show the form initially or with errors
     return render(request, 'register.html', {'form': form})
+
+
+def product(request, pk):
+    product = Product.objects.get(id=pk) 
+    return render(request, 'product.html', {'products': product})
