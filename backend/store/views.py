@@ -26,6 +26,7 @@ def login_user(request):
     
     else:
         return render(request, 'login.html', {})
+
     
     
 
@@ -35,21 +36,24 @@ def logout_user(request):
     return redirect('login')
 
 def register_user(request):
-    form = SignUpForm
     if request.method == "POST":
         form = SignUpForm(request.POST)
         if form.is_valid():
-            form.save()
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password1']
-
-            #login user
-            user = authenticate(username=username, password=password)
+            user = form.save() # form.save() returns the user object
+            
+            # Since you are using UserCreationForm, the password logic is handled inside.
+            # You can log them in immediately like this:
             login(request, user)
-            messages.success(request, ("you have registered successfully"))
+            
+            messages.success(request, ("You have registered successfully"))
             return redirect('home')
-        
+        else:
+            # If the form isn't valid (e.g., password too short), 
+            # we stay on the page and show the errors.
+            messages.error(request, "Registration failed. Please correct the errors below.")
     else:
-        messages.success(request, ("registration failed please try again"))
-        return redirect('register')
-    return render(request, 'register.html', {'form':form})
+        # This handles the initial GET request when a user first visits the page
+        form = SignUpForm()
+    
+    # This MUST be outside the if/else to show the form initially or with errors
+    return render(request, 'register.html', {'form': form})
