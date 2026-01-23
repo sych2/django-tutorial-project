@@ -16,23 +16,13 @@
                 <centre>
                     <div class="col-8">
             
-                        <form method="POST" action="{% url 'login' %}">
+                        <form method="POST" action="{% url 'register' %}">
                             {% csrf_token %}
-  <div class="mb-3">
-    <label class="form-label">username</label>
-    <input  class="form-control"  placeholder="Enter your username" name =  "username">
-   
-  </div>
-  <div class="mb-3">
-    <label  class="form-label" >Password</label>
-    <input  class="form-control" name = "password" placeholder="Enter your password">
-  </div>
-  <div class="mb-3 form-check">
-    <input type="checkbox" class="form-check-input" id="exampleCheck1">
-    <label class="form-check-label" for="exampleCheck1">Terms and conditions</label>
-  </div>
-  <button type="submit" class="btn btn-primary">Submit</button>
-</form>
+                            {{form.as_p}}
+                            <br><br/>
+                            <button type = "submit" class="btn btn-secondary">register</button>
+  
+                        </form>
                         
                        
                     </div>
