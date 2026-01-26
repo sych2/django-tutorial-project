@@ -62,5 +62,5 @@ def register_user(request):
 
 
 def product(request, pk):
-    product = get_object_or_404(Product, id=pk) 
-    return render(request, 'product.html', {'products': product})
+    product = Product.objects.get(id= pk) 
+    return render(request, 'product.html', {'product': product})

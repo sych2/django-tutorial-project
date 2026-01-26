@@ -15,16 +15,17 @@
 
             {% if product.is_sale %}
             
-                <div class="card mb-3" style="max-width: 540px;">
+                <div class="card mb-3" >
                     <div class="row g-0">
                         <div class="col-md-4">
                             <img src="{{ product.image.url }}" class="img-fluid rounded-start" alt="...">
                         </div>
                         <div class="col-md-8">
                             <div class="card-body">
+                                <div class="badge bg-dark text-white position-absolute" style=" top: 0.5rem; right: 0.5rem;" >Sale</div>
                                 <h5 class="card-title">{{product.name}}</h5>
-                                        {{product.description}}
-                                        <strike>${{ product.price }}
+                                        {{product.description}} <br>
+                                        <strike>${{ product.price }}</strike>
                                                         &nbsp;${{product.sale_price}}</p>
                             </div>
                         </div>
@@ -34,7 +35,7 @@
                 
         <br><br><br><br><br>
             {% else %}
-                <div class="card mb-3" style="max-width: 540px;">
+                <div class="card mb-3" >
                     <div class="row g-0">
                         <div class="col-md-4">
                         <img src="{{ product.image.url }}" class="img-fluid rounded-start" alt="...">
