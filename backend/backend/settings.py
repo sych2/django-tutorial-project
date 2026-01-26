@@ -56,14 +56,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'api',
     'cart',
     'store',
     'rest_framework',
     'corsheaders'
 ]
 
-AUTH_USER_MODEL = "api.account"
+AUTH_USER_MODEL = "store.Customer"
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
