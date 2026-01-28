@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     'corsheaders'
 ]
 
-AUTH_USER_MODEL = "store.Customer"
+AUTH_USER_MODEL = "store.SignUpForm"
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',

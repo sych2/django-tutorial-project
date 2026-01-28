@@ -1,6 +1,7 @@
 import datetime
 from django.db import models
 from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 class Category(models.Model):
@@ -12,11 +13,10 @@ class Category(models.Model):
     class Meta:
         verbose_name_plural = 'cartegories'
 
-class Customer(models.Model):
+class Customer(models.Model, AbstractUser):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     phone = models.CharField(max_length=50)
-    email = models.EmailField(max_length=100)
     password = models.CharField(max_length=100)
 
     def __str__(self):
@@ -63,3 +63,4 @@ class Order(models.Model):
 
     def __str__(self):
         return self.product
+    
