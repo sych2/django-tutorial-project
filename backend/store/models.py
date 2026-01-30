@@ -13,7 +13,8 @@ class Category(models.Model):
     class Meta:
         verbose_name_plural = 'cartegories'
 
-class Customer(models.Model, AbstractUser):
+
+class Customer(AbstractUser):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     phone = models.CharField(max_length=50)
