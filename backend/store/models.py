@@ -12,9 +12,9 @@ class Category(models.Model):
     #change to plural
     class Meta:
         verbose_name_plural = 'cartegories'
+        
 
-
-class Customer(AbstractUser):
+class Customer(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     phone = models.CharField(max_length=50)
