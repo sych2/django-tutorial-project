@@ -26,10 +26,10 @@ class Customer(models.Model):
 class Employee(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    phone = models.CharField(max_length=50)
+    phone = models.CharField(max_length=50, unique=True)
     email = models.EmailField(max_length=100)
     password = models.CharField(max_length=100)
-    is_staff = models.BooleanField(True)
+    is_staff = models.BooleanField(default=True, null=True)
 
     
 
@@ -64,4 +64,10 @@ class Order(models.Model):
 
     def __str__(self):
         return self.product
+    
+
+class Account (AbstractUser):
+    phone_number = models.CharField(max_length=50, unique=True)
+    bio = models.TextField(blank=True, null=True)
+    profile_picture = models.ImageField(upload_to="profile_images/", blank=True)
     
