@@ -30,6 +30,7 @@ class Employee(models.Model):
     email = models.EmailField(max_length=100)
     password = models.CharField(max_length=100)
     is_staff = models.BooleanField(default=True, null=True)
+    is_admin = models.BooleanField(default=False, null=True)
 
     
 
@@ -70,4 +71,7 @@ class Account (AbstractUser):
     phone_number = models.CharField(max_length=50, unique=True)
     bio = models.TextField(blank=True, null=True)
     profile_picture = models.ImageField(upload_to="profile_images/", blank=True)
-    
+    REQUIRED_FIELDS = ['phone_number', 'email', 'first_name', 'last_name']
+
+    def __str__(self):
+        return f"{self.username} ({self.phone_number})"
