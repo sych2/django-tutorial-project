@@ -1,9 +1,42 @@
 import datetime
-from django.db import models
+
 from django.conf import settings
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db import models
 
 # Create your models here.
+
+
+class AccountManager(BaseUserManager):
+    def create_user(self, username, email, phone_number, password=None, **extra_fields):
+        if not email:
+            raise ValueError("Email is required")
+        if not phone_number:
+            raise ValueError("Phone number is required")
+
+        email = self.normalize_email(email)
+
+        user = self.model(
+            username=username,
+            email=email,
+            phone_number=phone_number,
+            **extra_fields
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, email, phone_number, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+
+        return self.create_user(
+            username=username,
+            email=email,
+            phone_number=phone_number,
+            password=password,
+            **extra_fields
+        )
 class Category(models.Model):
     name = models.CharField(max_length=50)
 
@@ -72,6 +105,8 @@ class Account (AbstractUser):
     bio = models.TextField(blank=True, null=True)
     profile_picture = models.ImageField(upload_to="profile_images/", blank=True)
     REQUIRED_FIELDS = ['phone_number', 'email', 'first_name', 'last_name']
+
+    objects = AccountManager()
 
     def __str__(self):
         return f"{self.username} ({self.phone_number})"

@@ -76,3 +76,10 @@ repos:
     hooks:
       - id: pymarkdown
         args: [scan, "."]
+
+
+  # 5. Code unification tool
+-   repo: https://github.com/pycqa/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort

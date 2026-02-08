@@ -1,10 +1,13 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Product
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404, redirect, render
+
 from .forms import SignUpForm
+from .models import Product
+
+
 # Create your views here.
 def home(request):
     products = Product.objects.all()
