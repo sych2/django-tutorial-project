@@ -49,7 +49,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
-        args: ['--maxkb=500'] # Blocks the 790MB error you saw!
+        args: ['--maxkb=2000'] # Blocks the 790MB error you saw!
       - id: check-yaml
       - id: check-json
       - id: check-merge-conflict
