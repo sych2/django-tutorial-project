@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import SignUpForm
-from .models import Product
+from .models import Category, Product
 
 
 # Create your views here.
@@ -71,3 +71,18 @@ def register_user(request):
 def product(request, pk):
     product = Product.objects.get(id=pk)
     return render(request, "product.html", {"product": product})
+
+
+def cartegory(request, foo):
+    # replace hyphens with spaces
+    foo = foo.replace("_", " ")
+    try:
+        category = Category.objects.get(name=foo)
+        products = Product.objects.filter(cartegory=cartegory)
+        return render(
+            request, "category.html", {"products": products, "category": category}
+        )
+
+    except:
+        messages.success(request, ("That cartegory doesnt exist"))
+        return redirect("home")
