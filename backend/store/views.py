@@ -73,16 +73,16 @@ def product(request, pk):
     return render(request, "product.html", {"product": product})
 
 
-def cartegory(request, foo):
+def category(request, foo):
     # replace hyphens with spaces
     foo = foo.replace("_", " ")
     try:
         category = Category.objects.get(name=foo)
-        products = Product.objects.filter(cartegory=cartegory)
+        products = Product.objects.filter(category=category)
         return render(
             request, "category.html", {"products": products, "category": category}
         )
 
     except:
-        messages.success(request, ("That cartegory doesnt exist"))
+        messages.success(request, ("That category doesnt exist"))
         return redirect("home")
