@@ -1,0 +1,84 @@
+repos:
+#  Custom Policy Check (Rego)
+-   repo: local
+    hooks:
+      - id: conftest
+        name: Conftest - Terraform Plan Policy Check
+        entry: conftest test
+        language: system
+        files: ^tfplan\.json$
+        args:
+          - "--policy"
+          - policy
+
+
+-   repo: https://github.com/bridgecrewio/checkov.git
+    rev: 3.2.500  # Use the latest version from their GitHub tags
+    hooks:
+      - id: checkov
+        verbose: true
+        args: [
+          --soft-fail,      # Optional: Don't block the commit if security issues are found
+          --quiet,          # Only show failed checks
+          --compact,        # Remove the code snippets to keep the terminal clean
+          --directory, "."  # Scan the current directory
+        ]
+
+
+- repo: https://github.com/psf/black
+  rev: 26.1.0
+  hooks:
+    - id: black
+      language_version: python3.12
+
+
+-   repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.105.0 # Use the latest version
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+      - id: terraform_tflint
+      - id: terraform_tfsec  # This is where tfsec fits in!
+      - id: terraform_docs
+
+
+# This config provides a language-agnostic "Safety Net"
+
+  #  Standard Git Sanity Checks
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=2000'] # Blocks the 790MB error you saw!
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  # 2. Security: Secret Detection
+-   repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+
+
+  # 3. Security:Secrets manager General Credential Protection
+-   repo: https://github.com/awslabs/git-secrets
+    rev: b9e96b3
+    hooks:
+      - id: git-secrets
+
+  # 4. Documentation Quality
+-   repo: https://github.com/jackdewinter/pymarkdown
+    rev: v0.9.35
+    hooks:
+      - id: pymarkdown
+        args: [scan, "."]
+
+
+  # 5. Code unification tool
+-   repo: https://github.com/pycqa/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort

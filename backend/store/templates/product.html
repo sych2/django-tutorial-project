@@ -14,7 +14,7 @@
         <div class ="container">
 
             {% if product.is_sale %}
-            
+
                 <div class="card mb-3" >
                     <div class="row g-0">
                         <div class="col-md-4">
@@ -31,8 +31,8 @@
                         </div>
                     </div>
                 </div>
-            
-                
+
+
         <br><br><br><br><br>
             {% else %}
                 <div class="card mb-3" >
@@ -44,21 +44,21 @@
                             <div class="card-body">
                                 <h5 class="card-title">${{ product.name }}</h5>
                                     {{ product.description }}
-                        
+
                                     ${{ product.price }}
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
         <br><br><br><br><br>
-           {% endif %}         
-           
+           {% endif %}
 
-        
 
-                
 
-                    
-                       
+
+
+
+
+
     {% endblock %}
