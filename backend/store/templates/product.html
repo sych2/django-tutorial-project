@@ -12,10 +12,7 @@
         </header>
 <br><br><br><br><br><br>
         <div class ="container">
-
-            {% if product.is_sale %}
-
-                <div class="card mb-3" >
+            <div class="card mb-3" >
                     <div class="row g-0">
                         <div class="col-md-4">
                             <img src="{{ product.image.url }}" class="img-fluid rounded-start" alt="...">
@@ -25,8 +22,50 @@
                                 <div class="badge bg-dark text-white position-absolute" style=" top: 0.5rem; right: 0.5rem;" >Sale</div>
                                 <h5 class="card-title">{{product.name}}</h5>
                                         {{product.description}} <br>
+            {% if product.is_sale %}
+
+
                                         <strike>${{ product.price }}</strike>
                                                         &nbsp;${{product.sale_price}}</p>
+                                                        <br><br><br>
+                             {% else %}
+                                {{ product.price }}
+                             {% endif %}
+
+                                            <button class="btn btn-secondary add-cart" value="{{ product.id }}">
+    Add to cart
+</button>
+
+<script>
+$(document).ready(function(){
+    // This now targets the CLASS 'add-cart'
+    $('.add-cart').click(function(e){
+        e.preventDefault();
+
+        var productId = $(this).val();
+        console.log("Button clicked for product:", productId);
+
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'cart_add' %}",
+            data: {
+                product_id: productId,
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                action: 'post'
+            },
+            success: function(response){
+                console.log("Success:", response);
+                // Optional: Update cart count UI here
+                alert("Product added to cart!");
+            },
+            error: function(xhr){
+                console.log("Error status:", xhr.status);
+                console.log("Error details:", xhr.responseText);
+            }
+        });
+    });
+});
+</script>
                             </div>
                         </div>
                     </div>
@@ -34,53 +73,13 @@
 
 
         <br><br><br><br><br>
-            {% else %}
-                <div class="card mb-3" >
-                    <div class="row g-0">
-                        <div class="col-md-4">
-                        <img src="{{ product.image.url }}" class="img-fluid rounded-start" alt="...">
-                        </div>
-                        <div class="col-md-8">
-                            <div class="card-body">
-                                <h5 class="card-title">${{ product.name }}</h5>
-                                    {{ product.description }}
 
-                                    ${{ product.price }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-        <br><br><br><br><br>
-           {% endif %}
+
+
                 <br> <br>
                 <a href="{% url 'home' %}" class="btn btn-secondary">Home</a>
-                <button class="btn btn-secondary" value="{{ product.id }}" id=" add-cart " >Add to cart </button>
 
-                <script>
-                    //check if button pressed
-                    $(document).on('click', '#add-cart', function(e){
-                        e.preventDefault();
-                        $.ajax({
-                            type: 'POST',
-                            url: '{% url 'cart_add' %}',
-                            data: {
-                                product_id: $('#add-cart').val,
-                                csrfmiddlewaretoken: '{{ csrf_token }}',
-                                action: 'POST'
-                            },
-                            success: function(json){
-                                console.log(json)
-
-                            },
-                            error: function(xhr, errmsg, err){}
-
-
-                        });
-                    })
-
-
-                </script>
 
 
 
