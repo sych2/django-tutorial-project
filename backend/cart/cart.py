@@ -1,24 +1,23 @@
 class Cart:
     def __init__(self, request):
         self.session = request.session
-
-        # Get the current session key if it exists
         cart = self.session.get("session_key")
 
-        # if the user is new, no session key! create one!
         if "session_key" not in request.session:
             cart = self.session["session_key"] = {}
 
-        # Make sure cart is available on all pages of the site
         self.cart = cart
 
-    def add(selr, product):
-        product_id = str(product_id)
+    # Fixed typo: changed 'selr' to 'self'
+    def add(self, product):
+        # Fixed error: Get the ID FROM the product object
+        product_id = str(product.id)
 
-        # logic
         if product_id in self.cart:
             pass
         else:
+            # Storing the price as a string is good practice for JSON serialization
             self.cart[product_id] = {"price": str(product.price)}
 
+        # Tell Django the session has changed so it saves to the DB
         self.session.modified = True
