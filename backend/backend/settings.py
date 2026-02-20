@@ -75,6 +75,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+OPA_URL = "http://localhost:8181/v1/data/app/auth/allow"
+OPA_TIMEOUT = 1  # seconds
+
 ROOT_URLCONF = "backend.urls"
 
 TEMPLATES = [

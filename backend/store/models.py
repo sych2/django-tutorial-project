@@ -50,10 +50,10 @@ class Category(models.Model):
 
 
 class Customer(models.Model):
+    account = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     phone = models.CharField(max_length=50)
-    password = models.CharField(max_length=100)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -103,15 +103,24 @@ class Order(models.Model):
 
 
 class Account(AbstractUser):
+
+    ROLE_CHOICES = (
+        ("admin", "Admin"),
+        ("employee", "Employee"),
+        ("customer", "Customer"),
+    )
+
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     phone_number = models.CharField(max_length=50, unique=True)
     bio = models.TextField(blank=True, null=True)
     profile_picture = models.ImageField(upload_to="profile_images/", blank=True)
+
     REQUIRED_FIELDS = ["phone_number", "email", "first_name", "last_name"]
 
     objects = AccountManager()
 
     def __str__(self):
-        return f"{self.username} ({self.phone_number})"
+        return f"{self.username} ({self.role})"
 
 
 class Location(models.Model):
