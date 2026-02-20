@@ -1,0 +1,15 @@
+{
+  "roles": {
+    "admin": {
+      "can_manage_all": true
+    },
+    "employee": {
+      "can_manage_products": true,
+      "can_view_orders": true
+    },
+    "customer": {
+      "can_create_order": true,
+      "can_view_own_order": true
+    }
+  }
+}
