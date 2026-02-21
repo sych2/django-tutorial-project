@@ -1,15 +1,29 @@
 {
   "roles": {
     "admin": {
-      "can_manage_all": true
+      "inherits": [],
+      "permissions": [
+        {"resource": "*", "actions": ["*"]}
+      ]
     },
     "employee": {
-      "can_manage_products": true,
-      "can_view_orders": true
+      "inherits": [],
+      "permissions": [
+        {"resource": "order", "actions": ["read"]},
+        {"resource": "product", "actions": ["read", "update"]}
+      ]
     },
     "customer": {
-      "can_create_order": true,
-      "can_view_own_order": true
+      "inherits": [],
+      "permissions": [
+        {"resource": "order", "actions": ["create", "read", "update"]}
+      ]
+    },
+    "manager": {
+      "inherits": ["employee"],
+      "permissions": [
+        {"resource": "order", "actions": ["delete"]}
+      ]
     }
   }
 }
