@@ -1,143 +1,98 @@
 package app.roles
 
-import data.app.helpers
+##
+## ROLE RESOLUTION MODULE
+##
+## Purpose:
+##   - Determine user role membership
+##   - Support hierarchical role inheritance
+##   - Provide reusable role predicates to other modules (e.g. auth.rego)
+##
+## Assumptions:
+##   - input.user.roles is an array of strings
+##   - roles.json may optionally define inheritance mappings
+##
+
+############################################
+# Defaults
+############################################
+
+default is_admin := false
+default is_employee := false
+default is_donor := false
+default is_beneficiary := false
 
 
-#
-# =========================================================
-# PURPOSE
-# =========================================================
-#
-# This module evaluates RBAC permissions.
-#
-# It does NOT grant access.
-# It determines whether a role permits
-# an action on a resource.
-#
-# auth.rego consumes this module.
-#
+############################################
+# Direct Role Checks
+############################################
 
-
-#
-# =========================================================
-# VALID ROLE CHECK
-# =========================================================
-#
-# Ensures the role exists in configuration.
-#
-
-valid_role if {
-    input.user.role != ""
-    data.roles[input.user.role]
-}
-
-
-#
-# =========================================================
-# ROLE INHERITANCE
-# =========================================================
-#
-# Recursively resolves inherited roles.
-# Supports hierarchical RBAC.
-#
-
-all_roles[r] {
-    r := input.user.role
-}
-
-all_roles[r] {
-    parent := data.roles[input.user.role].inherits[_]
-    r := parent
-}
-
-#
-# NOTE:
-# For deeper inheritance chains,
-# this can be expanded recursively.
-#
-
-
-#
-# =========================================================
-# PERMISSION MATCH
-# =========================================================
-#
-# Checks if any resolved role contains
-# a matching permission entry.
-#
-
-role_allows_action if {
-    valid_role
-    some r
-    r := all_roles[_]
-    permission := data.roles[r].permissions[_]
-    permission_allows(permission)
-}
-
-
-#
-# =========================================================
-# PERMISSION EVALUATION
-# =========================================================
-#
-# Determines if a permission object
-# authorizes the requested action
-# and resource.
-#
-
-permission_allows(permission) if {
-    resource_matches(permission.resource)
-    action_matches(permission.actions)
-}
-
-
-#
-# =========================================================
-# RESOURCE MATCHING
-# =========================================================
-#
-# Supports:
-# - Exact match
-# - Wildcard "*"
-#
-
-resource_matches(resource) if {
-    resource == "*"
-}
-
-resource_matches(resource) if {
-    resource == input.resource.type
-}
-
-
-#
-# =========================================================
-# ACTION MATCHING
-# =========================================================
-#
-# Supports:
-# - Exact action match
-# - Wildcard "*"
-#
-
-action_matches(actions) if {
-    "*" == actions[_]
-}
-
-action_matches(actions) if {
-    input.action == actions[_]
-}
-
-
-#
-# =========================================================
-# ADMIN SHORTCUT
-# =========================================================
-#
-# Optional optimization:
-# Admins bypass permission evaluation.
-#
-
+# True if user explicitly has "admin"
 is_admin if {
-    input.user.role == "admin"
+    "admin" in input.user.roles
+}
+
+# True if user explicitly has "employee"
+is_employee if {
+    "employee" in input.user.roles
+}
+
+# True if user explicitly has "donor"
+is_donor if {
+    "donor" in input.user.roles
+}
+
+# True if user explicitly has "beneficiary"
+is_beneficiary if {
+    "beneficiary" in input.user.roles
+}
+
+
+############################################
+# Role Inheritance (Optional via data file)
+############################################
+
+# roles.json example structure:
+# {
+#   "inheritance": {
+#     "admin": ["employee", "donor"],
+#     "employee": ["beneficiary"]
+#   }
+# }
+
+# True if a user inherits a role via hierarchy
+inherits_role(role) if {
+    some parent
+    parent in input.user.roles
+    role in data.roles.inheritance[parent]
+}
+
+# Effective role check (direct OR inherited)
+has_role(role) if {
+    role in input.user.roles
+}
+
+has_role(role) if {
+    inherits_role(role)
+}
+
+
+############################################
+# Role Enumeration (Partial Set - Rego v1)
+############################################
+
+# All effective roles of the user
+effective_roles contains role if {
+    has_role(role)
+}
+
+
+############################################
+# Defensive Validation
+############################################
+
+# Ensure roles field exists and is an array
+valid_roles_input if {
+    input.user.roles
+    is_array(input.user.roles)
 }
