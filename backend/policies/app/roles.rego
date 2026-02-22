@@ -4,95 +4,127 @@ package app.roles
 ## ROLE RESOLUTION MODULE
 ##
 ## Purpose:
-##   - Determine user role membership
-##   - Support hierarchical role inheritance
-##   - Provide reusable role predicates to other modules (e.g. auth.rego)
+##   - Normalize role evaluation
+##   - Provide reusable predicates for auth.rego
+##   - Centralize RBAC logic
 ##
 ## Assumptions:
-##   - input.user.roles is an array of strings
-##   - roles.json may optionally define inheritance mappings
+##   - input.user.role is a STRING (single-role system)
+##   - Role must be one of: admin, employee, customer
 ##
 
 ############################################
-# Defaults
+# Fail-Closed Defaults
 ############################################
 
 default is_admin := false
 default is_employee := false
-default is_donor := false
-default is_beneficiary := false
+default is_customer := false
+default has_valid_role := false
 
 
 ############################################
-# Direct Role Checks
+# Basic Validation
 ############################################
 
-# True if user explicitly has "admin"
+has_valid_role if {
+    input.user
+    input.user.role
+    valid_roles[input.user.role]
+}
+
+valid_roles := {
+    "admin": true,
+    "employee": true,
+    "customer": true
+}
+
+
+############################################
+# Direct Role Predicates
+############################################
+
 is_admin if {
-    "admin" in input.user.roles
+    has_valid_role
+    input.user.role == "admin"
 }
 
-# True if user explicitly has "employee"
 is_employee if {
-    "employee" in input.user.roles
+    has_valid_role
+    input.user.role == "employee"
 }
 
-# True if user explicitly has "donor"
-is_donor if {
-    "donor" in input.user.roles
-}
-
-# True if user explicitly has "beneficiary"
-is_beneficiary if {
-    "beneficiary" in input.user.roles
+is_customer if {
+    has_valid_role
+    input.user.role == "customer"
 }
 
 
 ############################################
-# Role Inheritance (Optional via data file)
+# Generic Role Check
 ############################################
 
-# roles.json example structure:
-# {
-#   "inheritance": {
-#     "admin": ["employee", "donor"],
-#     "employee": ["beneficiary"]
-#   }
-# }
-
-# True if a user inherits a role via hierarchy
-inherits_role(role) if {
-    some parent
-    parent in input.user.roles
-    role in data.roles.inheritance[parent]
-}
-
-# Effective role check (direct OR inherited)
-has_role(role) if {
-    role in input.user.roles
-}
+# Usage:
+# roles.has_role("admin")
 
 has_role(role) if {
-    inherits_role(role)
+    has_valid_role
+    role == input.user.role
 }
 
 
 ############################################
-# Role Enumeration (Partial Set - Rego v1)
+# Permission Matrix (RBAC Core)
 ############################################
 
-# All effective roles of the user
-effective_roles contains role if {
-    has_role(role)
+# Centralized permission mapping
+# permissions[role][resource_type][action] = true
+
+permissions := {
+    "admin": {
+        "*": {
+            "*": true
+        }
+    },
+    "employee": {
+        "product": {
+            "read": true,
+            "update": true
+        },
+        "order": {
+            "read": true
+        }
+    },
+    "customer": {
+        "product": {
+            "read": true
+        },
+        "order": {
+            "read": true,
+            "create": true
+        }
+    }
 }
 
 
 ############################################
-# Defensive Validation
+# RBAC Evaluation
 ############################################
 
-# Ensure roles field exists and is an array
-valid_roles_input if {
-    input.user.roles
-    is_array(input.user.roles)
+# Returns true if role is permitted to perform action on resource
+role_allows(action, resource_type) if {
+    has_valid_role
+
+    role := input.user.role
+
+    # Admin wildcard
+    permissions[role]["*"]["*"]
+}
+
+role_allows(action, resource_type) if {
+    has_valid_role
+
+    role := input.user.role
+
+    permissions[role][resource_type][action]
 }

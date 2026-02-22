@@ -1,153 +1,95 @@
 package app.auth
 
-#
-# ================================
-# DEFAULT DECISION (FAIL CLOSED)
-# ================================
-#
-# Production systems must fail securely.
-# If no rule explicitly allows access,
-# access is denied by default.
-#
+import data.app.roles
+
+##
+## AUTHORIZATION ENGINE
+##
+## Model:
+##   - RBAC via roles.role_allows()
+##   - Optional ownership enforcement
+##   - Fail closed
+##   - Structured deny reasons
+##
+
+############################################
+# Default: Deny
+############################################
 
 default allow := false
 
+############################################
+# Input Validation
+############################################
 
-#
-# ================================
-# MAIN DECISION OBJECT
-# ================================
-#
-# Instead of returning a boolean only,
-# we return a structured decision.
-# This improves observability and debugging.
-#
-
-decision := {
-    "allow": allow,
-    "reason": reason,
-    "user": input.user.id,
-    "action": input.action,
-    "resource": input.resource.type
+valid_input if {
+    input.user
+    input.user.id
+    input.user.role
+    input.action
+    input.resource
+    input.resource.type
 }
 
+############################################
+# Ownership Check
+############################################
 
-#
-# ================================
-# ALLOW RULE
-# ================================
-#
-# Access is allowed if:
-# 1. User is authenticated
-# 2. User role permits the action
-# 3. Resource constraints (e.g., ownership) are satisfied
-#
+# Safe ownership evaluation
+is_owner if {
+    input.resource.owner_id
+    input.user.id == input.resource.owner_id
+}
 
+############################################
+# Core Authorization Logic
+############################################
+
+# 1️⃣ Pure RBAC access (admin / employee product updates etc.)
 allow if {
-    is_authenticated
-    role_allows_action
-    resource_constraints_satisfied
+    valid_input
+    roles.role_allows(input.action, input.resource.type)
+    not ownership_required
 }
 
-
-#
-# ================================
-# AUTHENTICATION CHECK
-# ================================
-#
-# This assumes JWT validation is handled
-# before OPA receives the input.
-# OPA verifies claims structure.
-#
-
-is_authenticated if {
-    input.user.id != ""
-    input.user.role != ""
+# 2️⃣ RBAC + ownership enforced
+allow if {
+    valid_input
+    roles.role_allows(input.action, input.resource.type)
+    ownership_required
+    is_owner
 }
 
+############################################
+# Ownership Policy Rules
+############################################
 
-#
-# ================================
-# ROLE-BASED ACCESS CONTROL
-# ================================
-#
-# Delegates to roles module.
-# Checks if user's role is allowed
-# to perform the requested action
-# on the resource type.
-#
-
-role_allows_action if {
-    allowed_actions := data.roles[input.user.role][input.resource.type]
-    input.action == allowed_actions[_]
+# Define which actions require ownership
+ownership_required if {
+    input.resource.type == "order"
+    input.action == "read"
 }
 
-
-#
-# ================================
-# RESOURCE CONSTRAINTS
-# ================================
-#
-# Handles contextual checks like:
-# - Ownership
-# - Multi-tenant boundaries
-# - Status restrictions
-#
-# This calls the ownership module.
-#
-
-resource_constraints_satisfied if {
-    not requires_ownership
-}
-
-resource_constraints_satisfied if {
-    requires_ownership
-    data.app.ownership.is_owner
-}
-
-
-#
-# ================================
-# DETERMINE IF OWNERSHIP IS REQUIRED
-# ================================
-#
-# Some actions (e.g., DELETE, UPDATE)
-# may require ownership validation.
-#
-
-requires_ownership if {
+ownership_required if {
+    input.resource.type == "order"
     input.action == "update"
 }
 
-requires_ownership if {
-    input.action == "delete"
+############################################
+# Deny Reasons (Observability)
+############################################
+
+deny_reasons contains "invalid_input" if {
+    not valid_input
 }
 
-
-#
-# ================================
-# DENIAL REASONS
-# ================================
-#
-# Provides explicit reasoning for audit logs.
-# Only one reason will evaluate in practice
-# because allow short-circuits.
-#
-
-reason := "Access granted" if allow
-
-reason := "User not authenticated" if {
-    not is_authenticated
+deny_reasons contains "rbac_denied" if {
+    valid_input
+    not roles.role_allows(input.action, input.resource.type)
 }
 
-reason := "Role does not permit this action" if {
-    is_authenticated
-    not role_allows_action
-}
-
-reason := "Ownership requirement not satisfied" if {
-    is_authenticated
-    role_allows_action
-    requires_ownership
-    not data.app.ownership.is_owner
+deny_reasons contains "ownership_required" if {
+    valid_input
+    ownership_required
+    not is_owner
 }

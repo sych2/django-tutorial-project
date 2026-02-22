@@ -130,8 +130,16 @@ has_owner if {
 # Requires input.context.time to be provided.
 #
 
+
+################################################################################
+# Returns true if current time is within business hours (8am–5pm)
+################################################################################
+
 is_business_hours if {
-    hour := time.hour(input.context.time)
+    now_ns := time.now_ns()
+    clock := time.clock(now_ns)
+    hour := clock[0]
+
     hour >= 8
-    hour <= 17
+    hour < 17
 }
