@@ -1,136 +1,105 @@
 package app.auth_test
 
-# Import the policy under test
-import data.app.auth
+import data.app.auth.allow
 
+################################################################################
+# TEST: Admin can delete products
+################################################################################
 
-test_allow_admin_access if {
-    auth.allow with input as {
+test_admin_can_delete if {
+    allow with input as {
         "user": {
             "id": "1",
-            "roles": ["admin"]
+            "role": "admin"
         },
-        "action": "read",
+        "action": "delete",
         "resource": {
-            "type": "donation"
+            "type": "product",
+            "owner_id": "1"
         }
     }
 }
-############################################################
-# TEST 1: Admin can access any resource
-############################################################
 
-test_admin_can_read_any_account {
-    input := {
+################################################################################
+# TEST: Customer cannot delete product they do not own
+################################################################################
+
+test_customer_cannot_delete_others_product if {
+    not allow with input as {
         "user": {
-            "id": "admin1",
-            "role": "admin"
+            "id": "10",
+            "role": "customer"
         },
+        "action": "delete",
         "resource": {
-            "type": "account",
-            "owner_id": "user123"
-        },
-        "action": "read"
+            "type": "product",
+            "owner_id": "999"
+        }
     }
-
-    auth.allow with input as input
 }
 
-############################################################
-# TEST 2: Owner can read their own resource
-############################################################
+################################################################################
+# TEST: Customer can read own order
+################################################################################
 
-test_owner_can_read_own_account {
-    input := {
+test_customer_can_read_own_order if {
+    allow with input as {
         "user": {
-            "id": "user123",
-            "role": "member"
+            "id": "10",
+            "role": "customer"
         },
+        "action": "read",
         "resource": {
-            "type": "account",
-            "owner_id": "user123"
-        },
-        "action": "read"
+            "type": "order",
+            "owner_id": "10"
+        }
     }
-
-    auth.allow with input as input
 }
 
-############################################################
-# TEST 3: Non-owner cannot read another user’s account
-############################################################
+################################################################################
+# TEST: Anonymous user denied
+################################################################################
 
-test_non_owner_cannot_read_other_account {
-    input := {
-        "user": {
-            "id": "user999",
-            "role": "member"
-        },
+test_anonymous_denied if {
+    not allow with input as {
+        "action": "read",
         "resource": {
-            "type": "account",
-            "owner_id": "user123"
-        },
-        "action": "read"
+            "type": "product"
+        }
     }
-
-    not auth.allow with input as input
 }
 
-############################################################
-# TEST 4: Member cannot delete account
-############################################################
+################################################################################
+# TEST: Employee can update product
+################################################################################
 
-test_member_cannot_delete_account {
-    input := {
+test_employee_can_update_product if {
+    allow with input as {
         "user": {
-            "id": "user123",
-            "role": "member"
+            "id": "22",
+            "role": "employee"
         },
+        "action": "update",
         "resource": {
-            "type": "account",
-            "owner_id": "user123"
-        },
-        "action": "delete"
+            "type": "product"
+        }
     }
-
-    not auth.allow with input as input
 }
 
-############################################################
-# TEST 5: Missing role should deny access (fail closed)
-############################################################
+################################################################################
+# TEST: Customer cannot update another user's order
+################################################################################
 
-test_missing_role_denied {
-    input := {
+test_customer_cannot_update_other_order if {
+    not allow with input as {
         "user": {
-            "id": "user123"
+            "id": "10",
+            "role": "customer"
         },
+        "action": "update",
         "resource": {
-            "type": "account",
-            "owner_id": "user123"
-        },
-        "action": "read"
+            "type": "order",
+            "owner_id": "999"
+        }
     }
-
-    not auth.allow with input as input
-}
-
-############################################################
-# TEST 6: Unknown action denied
-############################################################
-
-test_unknown_action_denied {
-    input := {
-        "user": {
-            "id": "admin1",
-            "role": "admin"
-        },
-        "resource": {
-            "type": "account",
-            "owner_id": "user123"
-        },
-        "action": "hack"
-    }
-
-    not auth.allow with input as input
 }
