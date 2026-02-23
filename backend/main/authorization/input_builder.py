@@ -3,8 +3,7 @@ from .resource_resolver import ResourceResolver
 
 class PolicyInputBuilder:
     """
-    Transforms a Django HTTP request into a structured OPA policy input.
-    Used by authorization middleware before policy evaluation.
+    Transforms Django request into structured OPA input.
     """
 
     @staticmethod
@@ -14,12 +13,13 @@ class PolicyInputBuilder:
 
         return {
             "user": {
-                "id": str(getattr(user, "id", "")),
+                "id": getattr(user, "id", None),
                 "username": getattr(user, "username", None),
                 "role": getattr(user, "role", None),
                 "is_authenticated": user.is_authenticated,
                 "is_superuser": getattr(user, "is_superuser", False),
             },
+            "action": request.method,  # 🔥 CRITICAL FIX
             "request": {
                 "method": request.method,
                 "path": request.path,
