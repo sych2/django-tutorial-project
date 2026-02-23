@@ -2,12 +2,13 @@ from django.http import JsonResponse
 
 from .input_builder import PolicyInputBuilder
 from .opa_client import OPAClient
+from .resource_resolver import ResourceResolver
 
 
 class OPAAuthorizationMiddleware:
     """
     Global authorization middleware.
-    Enforces OPA policy evaluation on every authenticated request.
+    Delegates all access decisions to OPA.
     """
 
     def __init__(self, get_response):
@@ -16,16 +17,18 @@ class OPAAuthorizationMiddleware:
 
     def __call__(self, request):
 
-        # Skip admin/login/static endpoints if needed
+        # Skip Django admin completely
         if request.path.startswith("/admin/"):
             return self.get_response(request)
 
-        if not request.user.is_authenticated:
-            return JsonResponse(
-                {"detail": "Authentication required"},
-                status=401,
-            )
+        # Resolve resource first
+        resource = ResourceResolver.resolve(request)
 
+        # Bypass static/system routes
+        if not resource:
+            return self.get_response(request)
+
+        # Build policy input (must support anonymous users)
         policy_input = PolicyInputBuilder.build(request)
 
         allowed = self.opa_client.evaluate(policy_input)

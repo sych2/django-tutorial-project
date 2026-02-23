@@ -1,15 +1,32 @@
 """
 resource_resolver.py
 
-Responsible for extracting resource-level context from an incoming
-Django request. This context is supplied to the policy engine (OPA)
-as part of the authorization input document.
+Production-grade resource resolver for OPA authorization.
 
-Design Goals:
-- Must NEVER raise exceptions (middleware safety)
-- Must degrade gracefully when metadata is unavailable
-- Must support both Django and Django REST Framework
-- Must be easily extensible for domain-specific resource resolution
+Responsibilities:
+- Extract structured resource metadata from Django HttpRequest
+- Classify request into logical resource domains (type)
+- Provide ownership hints (owner_id)
+- Never raise exceptions
+- Degrade gracefully
+- Support both Django and DRF
+- Be extensible for future domain expansion
+
+Contract with OPA Policy:
+
+    input.resource = {
+        "type": "view" | "order" | "product" | ...,
+        "path": str,
+        "method": str,
+        "view_name": str | None,
+        "app_name": str | None,
+        "url_name": str | None,
+        "route": str | None,
+        "kwargs": dict,
+        "owner_id": Any | None,
+    }
+
+This structure MUST remain consistent with auth.rego expectations.
 """
 
 from typing import Any, Dict, Optional
@@ -19,37 +36,25 @@ from django.http import HttpRequest
 
 class ResourceResolver:
     """
-    Extracts structured resource metadata from a Django HttpRequest.
-
-    The resolved data is included in the OPA input under:
-
-        input.resource
-
-    Example output:
-
-        {
-            "path": "/api/users/42/",
-            "method": "GET",
-            "view_name": "user-detail",
-            "app_name": "users",
-            "url_name": "user-detail",
-            "route": "api/users/<int:id>/",
-            "kwargs": {"id": 42},
-            "resource_id": 42,
-        }
+    Extracts structured resource metadata from an HttpRequest
+    for use by the OPA authorization engine.
     """
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
     @staticmethod
     def resolve(request: HttpRequest) -> Dict[str, Any]:
         """
-        Entry point used by PolicyInputBuilder.
+        Safely resolve resource metadata from request.
 
         Always returns a dictionary.
-        Never raises.
+        Never raises exceptions.
         """
 
         try:
-            # Skip static/media files from policy evaluation
+            # Static/system requests should bypass authorization
             if ResourceResolver._is_static_request(request):
                 return {}
 
@@ -59,8 +64,8 @@ class ResourceResolver:
             app_name = None
             url_name = None
             route = None
-            kwargs = {}
-            resource_id = None
+            kwargs: Dict[str, Any] = {}
+            owner_id = None
 
             if resolver_match:
                 view_name = getattr(resolver_match, "view_name", None)
@@ -69,10 +74,16 @@ class ResourceResolver:
                 route = getattr(resolver_match, "route", None)
                 kwargs = getattr(resolver_match, "kwargs", {}) or {}
 
-                # Attempt to infer primary resource identifier
-                resource_id = ResourceResolver._extract_resource_id(kwargs)
+                owner_id = ResourceResolver._extract_owner_id(kwargs)
+
+            resource_type = ResourceResolver._infer_resource_type(
+                path=request.path,
+                view_name=view_name,
+                app_name=app_name,
+            )
 
             return {
+                "type": resource_type,
                 "path": request.path,
                 "method": request.method,
                 "view_name": view_name,
@@ -80,12 +91,13 @@ class ResourceResolver:
                 "url_name": url_name,
                 "route": route,
                 "kwargs": kwargs,
-                "resource_id": resource_id,
+                "owner_id": owner_id,
             }
 
         except Exception:
             # Absolute safety: middleware must never crash
             return {
+                "type": "view",
                 "path": request.path,
                 "method": request.method,
                 "view_name": None,
@@ -93,21 +105,69 @@ class ResourceResolver:
                 "url_name": None,
                 "route": None,
                 "kwargs": {},
-                "resource_id": None,
+                "owner_id": None,
             }
 
     # ------------------------------------------------------------------
-    # Internal Helpers
+    # Resource Type Classification
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _infer_resource_type(
+        path: str,
+        view_name: Optional[str],
+        app_name: Optional[str],
+    ) -> str:
+        """
+        Classifies the request into a logical resource domain.
+
+        This drives policy routing in OPA.
+
+        Strategy:
+        1. API path prefix detection
+        2. App-level classification
+        3. Fallback to "view"
+        """
+
+        if not path:
+            return "view"
+
+        # --- API-based routing ---
+        if path.startswith("/api/orders"):
+            return "order"
+
+        if path.startswith("/api/products"):
+            return "product"
+
+        if path.startswith("/api/users"):
+            return "user"
+
+        # --- App-based routing (cleaner for large systems) ---
+        if app_name == "orders":
+            return "order"
+
+        if app_name == "products":
+            return "product"
+
+        if app_name == "users":
+            return "user"
+
+        # --- Default: treat as UI view ---
+        return "view"
+
+    # ------------------------------------------------------------------
+    # Static/System Detection
     # ------------------------------------------------------------------
 
     @staticmethod
     def _is_static_request(request: HttpRequest) -> bool:
         """
-        Determines whether request targets static/media assets.
+        Determines whether request targets static/media/system assets.
 
-        These should typically bypass authorization checks.
+        These should bypass authorization middleware entirely.
         """
-        path = request.path
+
+        path = request.path or ""
 
         return (
             path.startswith("/static/")
@@ -116,16 +176,19 @@ class ResourceResolver:
             or path == "/robots.txt"
         )
 
+    # ------------------------------------------------------------------
+    # Ownership Extraction
+    # ------------------------------------------------------------------
+
     @staticmethod
-    def _extract_resource_id(kwargs: Dict[str, Any]) -> Optional[Any]:
+    def _extract_owner_id(kwargs: Dict[str, Any]) -> Optional[Any]:
         """
-        Attempts to extract a primary resource identifier
+        Attempts to extract a primary ownership identifier
         from URL kwargs.
 
         Supports common naming conventions:
             id
             pk
-            user_id
             object_id
             <model>_id
         """
@@ -133,14 +196,12 @@ class ResourceResolver:
         if not kwargs:
             return None
 
-        # Common conventions first
         priority_keys = ["id", "pk", "object_id"]
 
         for key in priority_keys:
             if key in kwargs:
                 return kwargs[key]
 
-        # Fallback: any key ending with _id
         for key, value in kwargs.items():
             if key.endswith("_id"):
                 return value
