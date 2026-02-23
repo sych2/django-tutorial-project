@@ -70,7 +70,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "backend.authorization.middleware.OPAAuthorizationMiddleware",
+    "main.authorization.middleware.OPAAuthorizationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -78,7 +78,7 @@ MIDDLEWARE = [
 OPA_URL = "http://localhost:8181/v1/data/app/auth/allow"
 OPA_TIMEOUT = 1  # seconds
 
-ROOT_URLCONF = "backend.urls"
+ROOT_URLCONF = "main.urls"
 
 TEMPLATES = [
     {
@@ -96,7 +96,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "backend.wsgi.application"
+WSGI_APPLICATION = "main.wsgi.application"
 
 
 # Database
