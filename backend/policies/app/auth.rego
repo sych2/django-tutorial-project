@@ -2,25 +2,36 @@ package app.auth
 
 import data.app.roles
 
-##
-## AUTHORIZATION ENGINE
-##
-## Model:
-##   - RBAC via roles.role_allows()
-##   - Optional ownership enforcement
-##   - Fail closed
-##   - Structured deny reasons
-##
-
-############################################
-# Default: Deny
-############################################
-
 default allow := false
 
-############################################
-# Input Validation
-############################################
+#################################################
+# PUBLIC ROUTES (No authentication required)
+#################################################
+
+public_views := {
+    "home",
+    "home-about",
+    "logout",
+}
+
+allow if {
+    input.resource.type == "view"
+    input.resource.view_name in public_views
+}
+
+#################################################
+# AUTHENTICATED ROUTES (Generic protection)
+#################################################
+
+allow if {
+    input.resource.type == "view"
+    not input.resource.view_name in public_views
+    input.user.is_authenticated
+}
+
+#################################################
+# BUSINESS RESOURCE AUTHORIZATION (RBAC)
+#################################################
 
 valid_input if {
     input.user
@@ -28,31 +39,23 @@ valid_input if {
     input.user.role
     input.action
     input.resource
-    input.resource.type
+    input.resource.type != "view"
 }
 
-############################################
-# Ownership Check
-############################################
-
-# Safe ownership evaluation
+# Ownership check
 is_owner if {
     input.resource.owner_id
     input.user.id == input.resource.owner_id
 }
 
-############################################
-# Core Authorization Logic
-############################################
-
-# 1️⃣ Pure RBAC access (admin / employee product updates etc.)
+# Pure RBAC
 allow if {
     valid_input
     roles.role_allows(input.action, input.resource.type)
     not ownership_required
 }
 
-# 2️⃣ RBAC + ownership enforced
+# RBAC + ownership
 allow if {
     valid_input
     roles.role_allows(input.action, input.resource.type)
@@ -60,11 +63,10 @@ allow if {
     is_owner
 }
 
-############################################
-# Ownership Policy Rules
-############################################
+#################################################
+# OWNERSHIP RULES
+#################################################
 
-# Define which actions require ownership
 ownership_required if {
     input.resource.type == "order"
     input.action == "read"
@@ -75,9 +77,9 @@ ownership_required if {
     input.action == "update"
 }
 
-############################################
-# Deny Reasons (Observability)
-############################################
+#################################################
+# OBSERVABILITY
+#################################################
 
 deny_reasons contains "invalid_input" if {
     not valid_input
