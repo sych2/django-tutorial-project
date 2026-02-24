@@ -2,49 +2,83 @@ package app.auth
 
 import data.app.roles
 
-############################################
-# DEFAULT
-############################################
+############################################################
+# DEFAULT DECISION
+############################################################
 
 default allow := false
 
-############################################
-# PUBLIC ROUTES
-############################################
+############################################################
+# INPUT VALIDATION
+############################################################
+
+valid_user if {
+    input.user
+    input.user.id
+    input.user.is_authenticated != null
+}
+
+valid_resource if {
+    input.resource
+    input.resource.type
+}
+
+valid_view_request if {
+    valid_user
+    valid_resource
+    input.resource.type == "view"
+    input.resource.view_name
+}
+
+valid_business_request if {
+    valid_user
+    valid_resource
+    input.resource.type != "view"
+    input.action
+    input.user.role
+}
+
+############################################################
+# PUBLIC ROUTES (NO AUTH REQUIRED)
+############################################################
 
 public_views := {
     "home",
-    "home-about",
+    "about",
     "logout",
 }
 
-# Allow public views regardless of auth
 allow if {
-    input.resource.type == "view"
-    input.resource.view_name in public_views
+    valid_view_request
+    public_views[input.resource.view_name]
 }
 
-############################################
-# PROTECTED VIEWS
-############################################
+############################################################
+# PROTECTED DJANGO VIEWS
+############################################################
 
-# Any non-public view requires authentication
 allow if {
-    input.resource.type == "view"
-    input.resource.view_name not in public_views
+    valid_view_request
+    not public_views[input.resource.view_name]
     input.user.is_authenticated
 }
 
-############################################
-# BUSINESS RESOURCES (RBAC + Ownership)
-############################################
+############################################################
+# BUSINESS RESOURCES (RBAC)
+############################################################
 
-valid_input if {
-    input.user
-    input.user.role
-    input.action
-    input.resource
-    input.resource.type != "view"
+rbac_allowed if {
+    valid_business_request
+    roles.role_allows(input.action, input.resource.type)
+}
+
+############################################################
+# OWNERSHIP RULES
+############################################################
+
+ownership_required if {
+    input.resource.type == "order"
+    input.action in {"read", "update"}
 }
 
 is_owner if {
@@ -52,45 +86,48 @@ is_owner if {
     input.user.id == input.resource.owner_id
 }
 
-# RBAC without ownership
+############################################################
+# BUSINESS RESOURCE ALLOW LOGIC
+############################################################
+
+# RBAC only (no ownership required)
 allow if {
-    valid_input
-    roles.role_allows(input.action, input.resource.type)
+    rbac_allowed
     not ownership_required
 }
 
-# RBAC + ownership
+# RBAC + ownership enforcement
 allow if {
-    valid_input
-    roles.role_allows(input.action, input.resource.type)
+    rbac_allowed
     ownership_required
     is_owner
 }
 
-############################################
-# OWNERSHIP RULES
-############################################
+############################################################
+# OBSERVABILITY (DENY REASONS)
+############################################################
 
-ownership_required if {
-    input.resource.type == "order"
-    input.action in {"read", "update"}
+deny_reasons contains "invalid_user" if {
+    not valid_user
 }
 
-############################################
-# OBSERVABILITY
-############################################
+deny_reasons contains "invalid_resource" if {
+    not valid_resource
+}
 
-deny_reasons contains "invalid_input" if {
-    not valid_input
+deny_reasons contains "unauthenticated_view_access" if {
+    valid_view_request
+    not public_views[input.resource.view_name]
+    not input.user.is_authenticated
 }
 
 deny_reasons contains "rbac_denied" if {
-    valid_input
+    valid_business_request
     not roles.role_allows(input.action, input.resource.type)
 }
 
 deny_reasons contains "ownership_violation" if {
-    valid_input
+    rbac_allowed
     ownership_required
     not is_owner
 }
