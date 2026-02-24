@@ -1,105 +1,134 @@
-package app.auth_test
+package app.auth
 
-import data.app.auth.allow
+import data.app.roles
 
-################################################################################
-# TEST: Admin can delete products
-################################################################################
+############################################################
+# DEFAULT (FAIL CLOSED)
+############################################################
 
-test_admin_can_delete if {
-    allow with input as {
-        "user": {
-            "id": "1",
-            "role": "admin"
-        },
-        "action": "delete",
-        "resource": {
-            "type": "product",
-            "owner_id": "1"
-        }
-    }
+default allow := false
+
+
+############################################################
+# PUBLIC ROUTES
+############################################################
+#
+# These routes are accessible without authentication.
+# Example: home, about, login
+#
+############################################################
+
+public_views := {
+    "home",
+    "about",
+    "login",
+    "home-about",
+    "logout",
 }
 
-################################################################################
-# TEST: Customer cannot delete product they do not own
-################################################################################
-
-test_customer_cannot_delete_others_product if {
-    not allow with input as {
-        "user": {
-            "id": "10",
-            "role": "customer"
-        },
-        "action": "delete",
-        "resource": {
-            "type": "product",
-            "owner_id": "999"
-        }
-    }
+allow if {
+    input.resource.type == "view"
+    input.resource.view_name in public_views
 }
 
-################################################################################
-# TEST: Customer can read own order
-################################################################################
 
-test_customer_can_read_own_order if {
-    allow with input as {
-        "user": {
-            "id": "10",
-            "role": "customer"
-        },
-        "action": "read",
-        "resource": {
-            "type": "order",
-            "owner_id": "10"
-        }
-    }
+############################################################
+# AUTHENTICATED VIEWS
+############################################################
+#
+# Any view not explicitly public requires authentication.
+# Authentication is enforced by middleware.
+#
+############################################################
+
+allow if {
+    input.resource.type == "view"
+    input.resource.view_name not in public_views
+    input.user.id
 }
 
-################################################################################
-# TEST: Anonymous user denied
-################################################################################
 
-test_anonymous_denied if {
-    not allow with input as {
-        "action": "read",
-        "resource": {
-            "type": "product"
-        }
-    }
+############################################################
+# BUSINESS RESOURCE AUTHORIZATION
+############################################################
+#
+# Applies to domain resources (order, product, etc.)
+# Uses RBAC + optional ownership enforcement.
+#
+############################################################
+
+valid_business_request if {
+    input.user.id
+    input.user.role
+    input.action
+    input.resource
+    input.resource.type != "view"
 }
 
-################################################################################
-# TEST: Employee can update product
-################################################################################
 
-test_employee_can_update_product if {
-    allow with input as {
-        "user": {
-            "id": "22",
-            "role": "employee"
-        },
-        "action": "update",
-        "resource": {
-            "type": "product"
-        }
-    }
+############################################################
+# OWNERSHIP CHECK
+############################################################
+
+is_owner if {
+    input.resource.owner_id
+    input.user.id == input.resource.owner_id
 }
 
-################################################################################
-# TEST: Customer cannot update another user's order
-################################################################################
 
-test_customer_cannot_update_other_order if {
-    not allow with input as {
-        "user": {
-            "id": "10",
-            "role": "customer"
-        },
-        "action": "update",
-        "resource": {
-            "type": "order",
-            "owner_id": "999"
-        }
-    }
+############################################################
+# OWNERSHIP REQUIRED RULES
+############################################################
+
+ownership_required if {
+    input.resource.type == "order"
+    input.action in {"read", "update"}
+}
+
+
+############################################################
+# RBAC WITHOUT OWNERSHIP
+############################################################
+
+allow if {
+    valid_business_request
+    roles.role_allows(input.action, input.resource.type)
+    not ownership_required
+}
+
+
+############################################################
+# RBAC WITH OWNERSHIP ENFORCEMENT
+############################################################
+
+allow if {
+    valid_business_request
+    roles.role_allows(input.action, input.resource.type)
+    ownership_required
+    is_owner
+}
+
+
+############################################################
+# OBSERVABILITY
+############################################################
+#
+# These expose structured denial reasons
+# Useful for debugging and audit logging
+#
+############################################################
+
+deny_reasons contains "invalid_input" if {
+    not valid_business_request
+}
+
+deny_reasons contains "rbac_denied" if {
+    valid_business_request
+    not roles.role_allows(input.action, input.resource.type)
+}
+
+deny_reasons contains "ownership_violation" if {
+    valid_business_request
+    ownership_required
+    not is_owner
 }

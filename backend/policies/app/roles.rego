@@ -1,31 +1,23 @@
 package app.roles
 
-##
-## ROLE RESOLUTION MODULE
-##
-## Purpose:
-##   - Normalize role evaluation
-##   - Provide reusable predicates for auth.rego
-##   - Centralize RBAC logic
-##
-## Assumptions:
-##   - input.user.role is a STRING (single-role system)
-##   - Role must be one of: admin, employee, customer
-##
+############################################################
+# ROLE MODEL
+#
+# Assumptions:
+#   - input.user.role is a STRING
+#   - Allowed roles: admin | employee | customer
+############################################################
 
-############################################
-# Fail-Closed Defaults
-############################################
-
+default has_valid_role := false
 default is_admin := false
 default is_employee := false
 default is_customer := false
-default has_valid_role := false
 
+############################################################
+# VALID ROLE CHECK
+############################################################
 
-############################################
-# Basic Validation
-############################################
+valid_roles := {"admin", "employee", "customer"}
 
 has_valid_role if {
     input.user
@@ -33,16 +25,9 @@ has_valid_role if {
     valid_roles[input.user.role]
 }
 
-valid_roles := {
-    "admin": true,
-    "employee": true,
-    "customer": true
-}
-
-
-############################################
-# Direct Role Predicates
-############################################
+############################################################
+# ROLE HELPERS
+############################################################
 
 is_admin if {
     has_valid_role
@@ -59,33 +44,33 @@ is_customer if {
     input.user.role == "customer"
 }
 
+############################################################
+# ROLE UTILITIES
+############################################################
 
-############################################
-# Generic Role Check
-############################################
-
-# Usage:
-# roles.has_role("admin")
-
+# Generic role matcher
 has_role(role) if {
     has_valid_role
-    role == input.user.role
+    input.user.role == role
 }
 
-
-############################################
-# Permission Matrix (RBAC Core)
-############################################
-
-# Centralized permission mapping
+############################################################
+# PERMISSION MATRIX
+#
+# Structure:
+#
 # permissions[role][resource_type][action] = true
+#
+# Wildcard supported:
+#   "*" for resource
+#   "*" for action
+############################################################
 
 permissions := {
     "admin": {
-        "*": {
-            "*": true
-        }
+        "*": {"*": true}
     },
+
     "employee": {
         "product": {
             "read": true,
@@ -95,6 +80,7 @@ permissions := {
             "read": true
         }
     },
+
     "customer": {
         "product": {
             "read": true
@@ -106,25 +92,32 @@ permissions := {
     }
 }
 
+############################################################
+# RBAC ENGINE
+############################################################
 
-############################################
-# RBAC Evaluation
-############################################
+# Main evaluation entrypoint
 
-# Returns true if role is permitted to perform action on resource
 role_allows(action, resource_type) if {
     has_valid_role
-
     role := input.user.role
 
-    # Admin wildcard
+    # 1️⃣ Wildcard rule
     permissions[role]["*"]["*"]
 }
 
 role_allows(action, resource_type) if {
     has_valid_role
-
     role := input.user.role
 
+    # 2️⃣ Resource-specific rule
+    permissions[role][resource_type]["*"]
+}
+
+role_allows(action, resource_type) if {
+    has_valid_role
+    role := input.user.role
+
+    # 3️⃣ Exact match
     permissions[role][resource_type][action]
 }
