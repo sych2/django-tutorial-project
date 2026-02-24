@@ -1,134 +1,122 @@
-package app.auth
+package app.auth_test
 
-import data.app.roles
-
-############################################################
-# DEFAULT (FAIL CLOSED)
-############################################################
-
-default allow := false
-
+import data.app.auth
 
 ############################################################
-# PUBLIC ROUTES
-############################################################
-#
-# These routes are accessible without authentication.
-# Example: home, about, login
-#
+# PUBLIC ROUTES (PATH BASED)
 ############################################################
 
-public_views := {
-    "home",
-    "about",
-    "login",
-    "home-about",
-    "logout",
+test_home_is_public if {
+    auth.allow with input as {
+        "resource": {
+            "type": "view",
+            "path": "/home/"
+        },
+        "user": {}
+    }
 }
 
-allow if {
-    input.resource.type == "view"
-    input.resource.view_name in public_views
+test_about_is_public if {
+    auth.allow with input as {
+        "resource": {
+            "type": "view",
+            "path": "/about/"
+        },
+        "user": {}
+    }
 }
 
-
-############################################################
-# AUTHENTICATED VIEWS
-############################################################
-#
-# Any view not explicitly public requires authentication.
-# Authentication is enforced by middleware.
-#
-############################################################
-
-allow if {
-    input.resource.type == "view"
-    input.resource.view_name not in public_views
-    input.user.id
+test_login_is_public if {
+    auth.allow with input as {
+        "resource": {
+            "type": "view",
+            "path": "/login/"
+        },
+        "user": {}
+    }
 }
 
 
 ############################################################
-# BUSINESS RESOURCE AUTHORIZATION
-############################################################
-#
-# Applies to domain resources (order, product, etc.)
-# Uses RBAC + optional ownership enforcement.
-#
+# ANONYMOUS USERS BLOCKED FOR BUSINESS RESOURCES
 ############################################################
 
-valid_business_request if {
-    input.user.id
-    input.user.role
-    input.action
-    input.resource
-    input.resource.type != "view"
+test_anonymous_denied if {
+    not auth.allow with input as {
+        "action": "read",
+        "resource": {
+            "type": "order"
+        },
+        "user": {}
+    }
 }
 
 
 ############################################################
-# OWNERSHIP CHECK
+# ADMIN
 ############################################################
 
-is_owner if {
-    input.resource.owner_id
-    input.user.id == input.resource.owner_id
+test_admin_can_delete if {
+    auth.allow with input as {
+        "action": "delete",
+        "resource": {
+            "type": "product",
+            "owner_id": "1"
+        },
+        "user": {
+            "id": "1",
+            "role": "admin"
+        }
+    }
 }
 
 
 ############################################################
-# OWNERSHIP REQUIRED RULES
+# EMPLOYEE
 ############################################################
 
-ownership_required if {
-    input.resource.type == "order"
-    input.action in {"read", "update"}
+test_employee_can_update_product if {
+    auth.allow with input as {
+        "action": "update",
+        "resource": {
+            "type": "product"
+        },
+        "user": {
+            "id": "22",
+            "role": "employee"
+        }
+    }
 }
 
 
 ############################################################
-# RBAC WITHOUT OWNERSHIP
+# CUSTOMER OWNERSHIP
 ############################################################
 
-allow if {
-    valid_business_request
-    roles.role_allows(input.action, input.resource.type)
-    not ownership_required
+test_customer_can_read_own_order if {
+    auth.allow with input as {
+        "action": "read",
+        "resource": {
+            "type": "order",
+            "owner_id": "10"
+        },
+        "user": {
+            "id": "10",
+            "role": "customer"
+        }
+    }
 }
 
-
-############################################################
-# RBAC WITH OWNERSHIP ENFORCEMENT
-############################################################
-
-allow if {
-    valid_business_request
-    roles.role_allows(input.action, input.resource.type)
-    ownership_required
-    is_owner
-}
-
-
-############################################################
-# OBSERVABILITY
-############################################################
-#
-# These expose structured denial reasons
-# Useful for debugging and audit logging
-#
-############################################################
-
-deny_reasons contains "invalid_input" if {
-    not valid_business_request
-}
-
-deny_reasons contains "rbac_denied" if {
-    valid_business_request
-    not roles.role_allows(input.action, input.resource.type)
-}
-
-deny_reasons contains "ownership_violation" if {
-    valid_business_request
-    ownership_required
-    not is_owner
+test_customer_cannot_update_other_order if {
+    not auth.allow with input as {
+        "action": "update",
+        "resource": {
+            "type": "order",
+            "owner_id": "999"
+        },
+        "user": {
+            "id": "10",
+            "role": "customer"
+        }
+    }
 }

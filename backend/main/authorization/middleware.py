@@ -31,6 +31,11 @@ class OPAAuthorizationMiddleware:
         # Build policy input (must support anonymous users)
         policy_input = PolicyInputBuilder.build(request)
 
+        # TEMP DEBUG — REMOVE AFTER FIXING
+        print("==== OPA INPUT START ====")
+        print(policy_input)
+        print("==== OPA INPUT END ====")
+
         allowed = self.opa_client.evaluate(policy_input)
 
         if not allowed:
