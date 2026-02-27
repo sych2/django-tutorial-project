@@ -1,22 +1,27 @@
 import requests
-from django.conf import settings
+from django.http import HttpResponseForbidden
+
+OPA_URL = "http://localhost:8181/v1/data/app/auth/allow"
 
 
-class OPAClient:
-    def __init__(self):
-        self.url = settings.OPA_URL
-        self.timeout = getattr(settings, "OPA_TIMEOUT", 1)
+def check_permission(input_data):
+    try:
+        response = requests.post(OPA_URL, json={"input": input_data}, timeout=2)
 
-    def evaluate(self, input_payload: dict) -> bool:
-        try:
-            response = requests.post(
-                self.url,
-                json={"input": input_payload},
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            result = response.json().get("result", False)
-            return bool(result)
-        except requests.RequestException:
-            # Fail closed in production
+        if response.status_code != 200:
+            print("OPA ERROR STATUS:", response.status_code)
+            print("OPA ERROR BODY:", response.text)
             return False
+
+        data = response.json()
+
+        # 🔥 Correct extraction
+        allowed = data.get("result", False)
+
+        print("OPA DECISION:", allowed)
+
+        return allowed
+
+    except Exception as e:
+        print("OPA CONNECTION ERROR:", str(e))
+        return False

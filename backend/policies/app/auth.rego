@@ -1,57 +1,56 @@
 package app.auth
 
-default allow := false
+default allow = false
 
-############################################################
-# PUBLIC ROUTES (PATH BASED)
-############################################################
+# ============================================================
+# Public Exact Paths
+# ============================================================
 
-public_paths := {
-    "/",
-    "/home/",
-    "/home/about/",
+public_exact_paths := {
     "/login/",
-    "/logout/",
-    "/register/",
+    "/home/about/",
+    "/health/"
 }
 
 allow if {
-    input.resource.type == "view"
-    input.resource.path in public_paths
+    input.resource.path in public_exact_paths
 }
 
-############################################################
-# ADMIN (FULL ACCESS)
-############################################################
+# ============================================================
+# Public Prefix Paths (Static + Media)
+# ============================================================
 
-allow if {
-    input.user.role == "admin"
-}
-
-############################################################
-# EMPLOYEE PERMISSIONS
-############################################################
-
-allow if {
-    input.user.role == "employee"
-    input.resource.type == "product"
-    input.action in {"read", "update"}
-}
-
-############################################################
-# CUSTOMER OWNERSHIP RULES
-############################################################
-
-allow if {
-    input.user.role == "customer"
-    input.resource.type == "order"
-    input.action == "read"
-    input.user.id == input.resource.owner_id
+public_prefixes := {
+    "/static/",
+    "/media/"
 }
 
 allow if {
-    input.user.role == "customer"
-    input.resource.type == "order"
-    input.action == "update"
-    input.user.id == input.resource.owner_id
+    some prefix
+    prefix := public_prefixes[_]
+    startswith(input.resource.path, prefix)
+}
+
+# ============================================================
+# Superuser Override
+# ============================================================
+
+allow if {
+    input.user.is_superuser == true
+}
+
+# ============================================================
+# Authenticated Access
+# ============================================================
+
+allow if {
+    input.user.is_authenticated == true
+}
+
+# ============================================================
+# Deny Reason (Optional)
+# ============================================================
+
+deny_reason := "Access denied: authentication required." if {
+    not allow
 }

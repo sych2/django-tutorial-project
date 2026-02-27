@@ -2,121 +2,110 @@ package app.auth_test
 
 import data.app.auth
 
-############################################################
-# PUBLIC ROUTES (PATH BASED)
-############################################################
+# ----------------------------------------
+# Public Routes
+# ----------------------------------------
 
-test_home_is_public if {
+test_login_is_public if {
     auth.allow with input as {
+        "user": {
+            "id": 0,
+            "username": "",
+            "role": "",
+            "is_authenticated": false,
+            "is_superuser": false
+        },
+        "action": "GET",
+        "request": {
+            "method": "GET",
+            "path": "/login/",
+            "query_params": {}
+        },
         "resource": {
             "type": "view",
-            "path": "/home/"
-        },
-        "user": {}
+            "path": "/login/",
+            "method": "GET",
+            "owner_id": null
+        }
     }
 }
 
 test_about_is_public if {
     auth.allow with input as {
+        "user": {
+            "id": 0,
+            "username": "",
+            "role": "",
+            "is_authenticated": false,
+            "is_superuser": false
+        },
+        "action": "GET",
+        "request": {
+            "method": "GET",
+            "path": "/home/about/",
+            "query_params": {}
+        },
         "resource": {
             "type": "view",
-            "path": "/about/"
-        },
-        "user": {}
+            "path": "/home/about/",
+            "method": "GET",
+            "owner_id": null
+        }
     }
 }
 
-test_login_is_public if {
+# ----------------------------------------
+# Authenticated Access
+# ----------------------------------------
+
+test_authenticated_user_allowed if {
     auth.allow with input as {
+        "user": {
+            "id": 2,
+            "username": "admin",
+            "role": "customer",
+            "is_authenticated": true,
+            "is_superuser": false
+        },
+        "action": "GET",
+        "request": {
+            "method": "GET",
+            "path": "/dashboard/",
+            "query_params": {}
+        },
         "resource": {
             "type": "view",
-            "path": "/login/"
-        },
-        "user": {}
+            "path": "/dashboard/",
+            "method": "GET",
+            "owner_id": null
+        }
     }
 }
 
+# ----------------------------------------
+# Unauthenticated Block
+# ----------------------------------------
 
-############################################################
-# ANONYMOUS USERS BLOCKED FOR BUSINESS RESOURCES
-############################################################
-
-test_anonymous_denied if {
+test_unauthenticated_user_blocked if {
     not auth.allow with input as {
-        "action": "read",
-        "resource": {
-            "type": "order"
-        },
-        "user": {}
-    }
-}
-
-
-############################################################
-# ADMIN
-############################################################
-
-test_admin_can_delete if {
-    auth.allow with input as {
-        "action": "delete",
-        "resource": {
-            "type": "product",
-            "owner_id": "1"
-        },
         "user": {
-            "id": "1",
-            "role": "admin"
-        }
-    }
-}
-
-
-############################################################
-# EMPLOYEE
-############################################################
-
-test_employee_can_update_product if {
-    auth.allow with input as {
-        "action": "update",
-        "resource": {
-            "type": "product"
+            "id": 0,
+            "username": "",
+            "role": "",
+            "is_authenticated": false,
+            "is_superuser": false
         },
-        "user": {
-            "id": "22",
-            "role": "employee"
-        }
-    }
-}
-
-
-############################################################
-# CUSTOMER OWNERSHIP
-############################################################
-
-test_customer_can_read_own_order if {
-    auth.allow with input as {
-        "action": "read",
-        "resource": {
-            "type": "order",
-            "owner_id": "10"
+        "action": "GET",
+        "request": {
+            "method": "GET",
+            "path": "/dashboard/",
+            "query_params": {}
         },
-        "user": {
-            "id": "10",
-            "role": "customer"
-        }
-    }
-}
-
-test_customer_cannot_update_other_order if {
-    not auth.allow with input as {
-        "action": "update",
         "resource": {
-            "type": "order",
-            "owner_id": "999"
-        },
-        "user": {
-            "id": "10",
-            "role": "customer"
+            "type": "view",
+            "path": "/dashboard/",
+            "method": "GET",
+            "owner_id": null
         }
     }
 }
