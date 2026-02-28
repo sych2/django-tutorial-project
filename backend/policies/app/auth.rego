@@ -22,7 +22,7 @@ allow if {
 
 public_prefixes := {
     "/static/",
-    "/media/"
+    "/media/uploads/products/"
 }
 
 allow if {
