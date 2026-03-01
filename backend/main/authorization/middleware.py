@@ -4,10 +4,14 @@ from django.http import HttpResponseForbidden
 
 OPA_URL = "http://localhost:8181/v1/data/app/auth/allow"
 
+# Infrastructure paths that must NEVER hit OPA
+BYPASS_PREFIXES = ("/static/", "/media/")
+
 
 class OPAAuthorizationMiddleware:
     """
-    Middleware that sends every request to OPA for authorization.
+    Policy Enforcement Point (PEP)
+    Sends protected requests to OPA for authorization.
     """
 
     def __init__(self, get_response):
@@ -15,10 +19,19 @@ class OPAAuthorizationMiddleware:
 
     def __call__(self, request):
 
+        path = request.path
+
+        # ✅ 1. Bypass infrastructure paths
+        if path.startswith(BYPASS_PREFIXES):
+            return self.get_response(request)
+
+        # ✅ 2. Build structured input
         input_data = self.build_opa_input(request)
 
+        # ✅ 3. Ask OPA
         allowed = self.check_opa(input_data)
 
+        # ✅ 4. Enforce decision
         if not allowed:
             return HttpResponseForbidden("Forbidden by OPA")
 
@@ -26,7 +39,7 @@ class OPAAuthorizationMiddleware:
 
     def build_opa_input(self, request):
         """
-        Builds structured input for OPA.
+        Builds structured, stable input contract for OPA.
         """
 
         user = request.user
@@ -56,6 +69,7 @@ class OPAAuthorizationMiddleware:
     def check_opa(self, input_data):
         """
         Calls OPA and returns boolean decision.
+        Fail-closed by default.
         """
 
         try:
@@ -65,22 +79,36 @@ class OPAAuthorizationMiddleware:
                 timeout=2,
             )
 
+            # 1️⃣ HTTP-level failure
             if response.status_code != 200:
                 print("OPA ERROR STATUS:", response.status_code)
                 print("OPA ERROR BODY:", response.text)
-                return False
+                return False  # Fail-closed
 
-            result = response.json()
+            # 2️⃣ Parse JSON safely
+            try:
+                result = response.json()
+            except ValueError:
+                print("OPA INVALID JSON RESPONSE")
+                return False  # Fail-closed
 
-            # 🔥 CRITICAL FIX:
+            # 3️⃣ Extract decision
             # Since we call /v1/data/app/auth/allow
-            # OPA returns: { "result": true }
+            # Response shape: { "result": true }
             allowed = result.get("result", False)
 
             print("OPA DECISION:", allowed)
 
-            return allowed
+            return bool(allowed)
+
+        except requests.exceptions.Timeout:
+            print("OPA TIMEOUT")
+            return False  # Fail-closed
+
+        except requests.exceptions.ConnectionError:
+            print("OPA CONNECTION ERROR")
+            return False  # Fail-closed
 
         except requests.exceptions.RequestException as e:
-            print("OPA CONNECTION ERROR:", str(e))
-            return False
+            print("OPA REQUEST ERROR:", str(e))
+            return False  # Fail-closed
