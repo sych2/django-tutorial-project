@@ -33,7 +33,7 @@ class OPAAuthorizationMiddleware:
 
         # ✅ 4. Enforce decision
         if not allowed:
-            return HttpResponseForbidden("Forbidden by OPA")
+            return HttpResponseForbidden("Forbidden by area")
 
         return self.get_response(request)
 
