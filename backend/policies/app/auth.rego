@@ -7,9 +7,7 @@ default allow = false
 # ============================================================
 
 public_exact_paths := {
-    "/login/",
-    "/home/about/",
-    "/health/"
+    "/health/",
 }
 
 allow if {
@@ -17,17 +15,18 @@ allow if {
 }
 
 # ============================================================
-# Public Prefix Paths (Static + Media)
+# Public Prefix Areas
+# Entire /home/ section is public
 # ============================================================
 
 public_prefixes := {
+    "/home/",
     "/static/",
-    "/media/uploads/products/"
+    "/media/uploads/products/",
 }
 
 allow if {
-    some prefix
-    prefix := public_prefixes[_]
+    some prefix in public_prefixes
     startswith(input.resource.path, prefix)
 }
 
@@ -36,21 +35,31 @@ allow if {
 # ============================================================
 
 allow if {
-    input.user.is_superuser == true
+    input.user.is_superuser
 }
 
 # ============================================================
-# Authenticated Access
+# Authenticated Protected Areas
+# Only logged-in users can access these prefixes
 # ============================================================
+
+authenticated_prefixes := {
+    "/dashboard/",
+    "/profile/",
+    "/orders/",
+    "/products/",
+}
 
 allow if {
-    input.user.is_authenticated == true
+    input.user.is_authenticated
+    some prefix in authenticated_prefixes
+    startswith(input.resource.path, prefix)
 }
 
 # ============================================================
-# Deny Reason (Optional)
+# Deny Reason (Optional for Debugging)
 # ============================================================
 
-deny_reason := "Access denied: authentication required." if {
+deny_reason := "Access denied: insufficient permissions." if {
     not allow
 }
