@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 
-from .models import Account  # ✅ relative import, no circular reference
+from .models import Account
 
 
 class SignUpForm(UserCreationForm):
@@ -25,6 +25,13 @@ class SignUpForm(UserCreationForm):
             attrs={"class": "form-control", "placeholder": "Last Name"}
         ),
     )
+    phone_number = forms.CharField(  # ✅ added
+        label="",
+        max_length=50,
+        widget=forms.TextInput(
+            attrs={"class": "form-control", "placeholder": "Phone Number"}
+        ),
+    )
 
     class Meta:
         model = Account
@@ -33,6 +40,7 @@ class SignUpForm(UserCreationForm):
             "first_name",
             "last_name",
             "email",
+            "phone_number",  # ✅ added
             "password1",
             "password2",
         )

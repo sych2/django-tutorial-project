@@ -3,15 +3,17 @@ package app.auth
 default allow = false
 
 # ============================================================
-# Whitelisted Admin Usernames
-# Only these users can access /admin/
+# Admin Helper Rule
 # ============================================================
 
-admin_whitelist := {
-    "maina",
-    "superadmin",
-    "simon",
-    # add more usernames here as needed
+is_admin if {
+    input.user.is_authenticated
+    input.user.role == "admin"
+}
+
+is_admin if {
+    input.user.is_authenticated
+    input.user.is_superuser == true
 }
 
 # ============================================================
@@ -20,6 +22,7 @@ admin_whitelist := {
 
 public_exact_paths := {
     "/health/",
+    "/favicon.ico",
 }
 
 allow if {
@@ -34,8 +37,12 @@ public_prefixes := {
     "/home/",
     "/static/",
     "/media/uploads/products/",
-    "/login/"
+    "/login/",
+    "/api/auth/register/",
+    "/api/auth/login/",
+    "/api/auth/token/",
 }
+
 
 allow if {
     some prefix in public_prefixes
@@ -44,20 +51,16 @@ allow if {
 
 # ============================================================
 # Admin Panel Access
-# Only whitelisted + authenticated users may access /admin/
-# Unauthenticated users or non-whitelisted get 403
+# Only role="admin" or is_superuser can access /admin/
 # ============================================================
 
 allow if {
     startswith(input.resource.path, "/admin/")
-    input.user.is_authenticated
-    input.user.username in admin_whitelist
+    is_admin
 }
 
 # ============================================================
 # Superuser Override (non-admin routes only)
-# Superusers can access everything EXCEPT /admin/
-# unless they are also in the whitelist
 # ============================================================
 
 allow if {
@@ -74,6 +77,8 @@ authenticated_prefixes := {
     "/profile/",
     "/orders/",
     "/products/",
+    "/api/auth/profile/",
+    "/api/auth/logout/",
 }
 
 allow if {
@@ -83,20 +88,20 @@ allow if {
 }
 
 # ============================================================
-# Deny Reason (for debugging)
+# Deny Reasons (for debugging)
 # ============================================================
 
 deny_reason := "Access denied: insufficient permissions." if {
     not allow
 }
 
-deny_reason := "Access denied: /admin/ requires whitelisted account." if {
+deny_reason := "Access denied: /admin/ requires admin role or superuser." if {
     startswith(input.resource.path, "/admin/")
     not input.user.is_authenticated
 }
 
-deny_reason := "Access denied: /admin/ requires whitelisted account." if {
+deny_reason := "Access denied: /admin/ requires admin role or superuser." if {
     startswith(input.resource.path, "/admin/")
     input.user.is_authenticated
-    not input.user.username in admin_whitelist
+    not is_admin
 }
