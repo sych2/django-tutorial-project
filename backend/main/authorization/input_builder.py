@@ -2,24 +2,24 @@ from .resource_resolver import ResourceResolver
 
 
 class PolicyInputBuilder:
-    """
-    Transforms Django request into structured OPA input.
-    """
-
     @staticmethod
-    def build(request):
+    def build(request) -> dict:
         resource_data = ResourceResolver.resolve(request)
         user = request.user
-
+        is_authenticated = bool(user.is_authenticated)
         return {
             "user": {
-                "id": getattr(user, "id", None),
-                "username": getattr(user, "username", None),
+                "id": user.id if is_authenticated else None,
+                "username": user.username if is_authenticated else None,
                 "role": getattr(user, "role", None),
-                "is_authenticated": user.is_authenticated,
-                "is_superuser": getattr(user, "is_superuser", False),
+                "is_authenticated": is_authenticated,
+                "is_superuser": (
+                    bool(getattr(user, "is_superuser", False))
+                    if is_authenticated
+                    else False
+                ),
             },
-            "action": request.method,  # 🔥 CRITICAL FIX
+            "action": request.method,
             "request": {
                 "method": request.method,
                 "path": request.path,
