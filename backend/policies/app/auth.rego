@@ -41,6 +41,8 @@ public_prefixes := {
     "/api/auth/register/",
     "/api/auth/login/",
     "/api/auth/token/",
+    "/home/api/products/",    # ✅ public product browsing
+    "/home/api/categories/",  # ✅ public category listing
 }
 
 
@@ -79,6 +81,10 @@ authenticated_prefixes := {
     "/products/",
     "/api/auth/profile/",
     "/api/auth/logout/",
+    "/home/api/orders/",
+    "/home/api/products/create/",   # ✅ add
+    "/home/api/products/",          # ✅ add (covers update, delete, detail)
+    "/home/api/categories/",        # ✅ add
 }
 
 allow if {
