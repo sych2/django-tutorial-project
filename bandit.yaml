@@ -1,0 +1,10 @@
+skips:
+  - B101    # assert statements (common in tests)
+
+exclude_dirs:
+  - .venv
+  - migrations
+  - tests
+
+level: MEDIUM
+confidence: MEDIUM

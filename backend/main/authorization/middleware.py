@@ -36,7 +36,7 @@ class OPAAuthorizationMiddleware:
 
     def _check_opa(self, input_data) -> bool:
         try:
-            response = requests.post(
+            response = requests.post(  # nosec B113
                 settings.OPA_URL,
                 json={"input": input_data},
                 timeout=getattr(settings, "OPA_TIMEOUT", 2),
