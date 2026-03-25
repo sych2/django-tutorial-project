@@ -68,7 +68,8 @@ repos:
     rev: v0.9.36
     hooks:
       - id: pymarkdown
-        args: [scan, "."]
+        args: ["--config", ".pymarkdown.json", "scan", "."]
+        exclude: ^frontend/README\.md$
 
 
   # 5. Code unification tool
