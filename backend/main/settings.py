@@ -9,7 +9,7 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config("SECRET_KEY")
+SECRET_KEY = config("SECRET_KEY")  # you already import config from decouple
 
 DEBUG = True
 
@@ -51,7 +51,9 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    'yourapp.middleware.ObfuscateHTMLMiddleware',  # Add at the bottom
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "main.authorization.middleware.OPAAuthorizationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
