@@ -53,7 +53,6 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    'yourapp.middleware.ObfuscateHTMLMiddleware',  # Add at the bottom
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "main.authorization.middleware.OPAAuthorizationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
