@@ -1,0 +1,56 @@
+import { useState, useEffect, createContext, useContext } from 'react'
+
+const CartContext = createContext(null)
+
+export function CartProvider({ children }) {
+  const [items, setItems] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('irongrid_cart')) || []
+    } catch {
+      return []
+    }
+  })
+
+  useEffect(() => {
+    localStorage.setItem('irongrid_cart', JSON.stringify(items))
+  }, [items])
+
+  const addItem = (product, quantity, days) => {
+    setItems(prev => {
+      const existing = prev.find(i => i.id === product.id)
+      if (existing) {
+        return prev.map(i => i.id === product.id
+          ? { ...i, quantity, days }
+          : i
+        )
+      }
+      return [...prev, {
+        id: product.id,
+        name: product.name,
+        image: product.image,
+        category: product.category?.name,
+        price: product.is_sale ? product.sale_price : product.price,
+        quantity,
+        days,
+      }]
+    })
+  }
+
+  const removeItem = (id) => setItems(prev => prev.filter(i => i.id !== id))
+
+  const clearCart = () => setItems([])
+
+  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
+
+  const totalPrice = items.reduce((sum, i) =>
+    sum + (Number(i.price) * i.quantity * i.days), 0
+  )
+
+  return (
+    <CartContext.Provider value={{ items, addItem, removeItem, clearCart, totalItems, totalPrice }}>
+      {children}
+    </CartContext.Provider>
+  )
+}
+
+export const useCart = () => useContext(CartContext)
