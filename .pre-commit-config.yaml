@@ -13,7 +13,7 @@ repos:
 
 
 -   repo: https://github.com/bridgecrewio/checkov.git
-    rev: 3.2.510  # Use the latest version from their GitHub tags
+    rev: 3.2.513  # Use the latest version from their GitHub tags
     hooks:
       - id: checkov
         verbose: true
@@ -86,3 +86,18 @@ repos:
         name: Bandit - Python Security Linter
         args: ["-c", "bandit.yaml"]
         files: \.py$
+ # 🔐 Semgrep security scanning
+-   repo: https://github.com/returntocorp/semgrep
+    rev: v1.89.0  # use latest stable
+    hooks:
+      - id: semgrep
+        name: semgrep-security-scan
+        entry: semgrep
+        language: python
+        types: [python, javascript]
+        args:
+          - "--config=auto"
+          - "--error"
+          - "--exclude=node_modules"
+          - "--exclude=.venv"
+          - "--metrics=off"
