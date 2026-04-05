@@ -88,15 +88,16 @@ repos:
         files: \.py$
  # 🔐 Semgrep security scanning
 -   repo: https://github.com/returntocorp/semgrep
-    rev: v1.89.0  # use latest stable
+    rev: v1.157.0  # use latest stable
     hooks:
       - id: semgrep
         name: semgrep-security-scan
         entry: semgrep
         language: python
-        types: [python, javascript]
+        types_or: [python, javascript, jsx, ts, tsx]
         args:
-          - "--config=auto"
+          - "--config=p/python"
+          - "--config=p/javascript"
           - "--error"
           - "--exclude=node_modules"
           - "--exclude=.venv"
