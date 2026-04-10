@@ -13,7 +13,7 @@ repos:
 
 
 -   repo: https://github.com/bridgecrewio/checkov.git
-    rev: 3.2.513  # Use the latest version from their GitHub tags
+    rev: 3.2.517  # Use the latest version from their GitHub tags
     hooks:
       - id: checkov
         verbose: true
@@ -101,4 +101,24 @@ repos:
           - "--error"
           - "--exclude=node_modules"
           - "--exclude=.venv"
-          - "--metrics=off"
+          - "--metrics=off
+-   repo: local
+    hooks:
+      - id: trivy-config
+        name: Trivy config scan
+        entry: trivy config --severity HIGH,CRITICAL --exit-code 1 .
+        language: system
+        pass_filenames: false
+
+      - id: trivy-fs
+        name: Trivy filesystem scan
+        entry: trivy fs --severity HIGH,CRITICAL --exit-code 1 .
+        language: system
+        pass_filenames: false
+
+      - id: trivy-image
+        name: Trivy image scan
+        entry: bash -c 'docker build -t local-image . && trivy image --severity HIGH,CRITICAL --exit-code 1 local-image'
+        language: system
+        pass_filenames: false
+        stages: [manual]
