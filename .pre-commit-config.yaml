@@ -88,7 +88,7 @@ repos:
         files: \.py$
  # 🔐 Semgrep security scanning
 -   repo: https://github.com/returntocorp/semgrep
-    rev: v1.157.0  # use latest stable
+    rev: v1.89.0  # use latest stable
     hooks:
       - id: semgrep
         name: semgrep-security-scan
@@ -101,7 +101,9 @@ repos:
           - "--error"
           - "--exclude=node_modules"
           - "--exclude=.venv"
-          - "--metrics=off
+          - "--metrics=off"
+
+
 -   repo: local
     hooks:
       - id: trivy-config
@@ -118,7 +120,9 @@ repos:
 
       - id: trivy-image
         name: Trivy image scan
-        entry: bash -c 'docker build -t local-image . && trivy image --severity HIGH,CRITICAL --exit-code 1 local-image'
+        entry: >
+          bash -c "docker build -t local-image ./backend &&
+                   trivy image --severity HIGH,CRITICAL --exit-code 1 local-image"
         language: system
         pass_filenames: false
         stages: [manual]
