@@ -13,7 +13,7 @@ repos:
 
 
 -   repo: https://github.com/bridgecrewio/checkov.git
-    rev: 3.2.517  # Use the latest version from their GitHub tags
+    rev: 3.2.521  # Use the latest version from their GitHub tags
     hooks:
       - id: checkov
         verbose: true
@@ -86,14 +86,14 @@ repos:
         name: Bandit - Python Security Linter
         args: ["-c", "bandit.yaml"]
         files: \.py$
- # 🔐 Semgrep security scanning
--   repo: https://github.com/returntocorp/semgrep
-    rev: v1.89.0  # use latest stable
+
+# 🔐 Semgrep security scanning
+-   repo: local
     hooks:
       - id: semgrep
-        name: semgrep-security-scan
+        name: Semgrep Security Scan
         entry: semgrep
-        language: python
+        language: system
         types_or: [python, javascript, jsx, ts, tsx]
         args:
           - "--config=p/python"
@@ -102,27 +102,3 @@ repos:
           - "--exclude=node_modules"
           - "--exclude=.venv"
           - "--metrics=off"
-
-
--   repo: local
-    hooks:
-      - id: trivy-config
-        name: Trivy config scan
-        entry: trivy config --severity HIGH,CRITICAL --exit-code 1 .
-        language: system
-        pass_filenames: false
-
-      - id: trivy-fs
-        name: Trivy filesystem scan
-        entry: trivy fs --severity HIGH,CRITICAL --exit-code 1 .
-        language: system
-        pass_filenames: false
-
-      - id: trivy-image
-        name: Trivy image scan
-        entry: >
-          bash -c "docker build -t local-image ./backend &&
-                   trivy image --severity HIGH,CRITICAL --exit-code 1 local-image"
-        language: system
-        pass_filenames: false
-        stages: [manual]

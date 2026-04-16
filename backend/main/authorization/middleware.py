@@ -6,7 +6,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .input_builder import PolicyInputBuilder
 
-BYPASS_PREFIXES = ("/static/", "/media/")
+BYPASS_PREFIXES = ("/static/", "/media/", "/health/")
 
 
 class OPAAuthorizationMiddleware:

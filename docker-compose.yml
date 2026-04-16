@@ -1,0 +1,146 @@
+services:
+
+  # ============================================================
+  # Database (PostgreSQL - internal only)
+  # ============================================================
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+
+    env_file:
+      - ./.env
+
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${DB_USER} -d $${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - backend_network
+
+
+  # ============================================================
+  # OPA — Policy Engine
+  # ============================================================
+  opa:
+    image: openpolicyagent/opa:latest
+    restart: unless-stopped
+
+    volumes:
+      - ./backend/policies:/policies:ro
+
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--log-level=info"
+      - "/policies"
+
+    healthcheck:
+      test: ["CMD", "/opa", "version"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+
+    networks:
+      - backend_network
+
+
+  # ============================================================
+  # Django Backend
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+
+    restart: unless-stopped
+
+    env_file:
+      - .env
+      - ./backend/.env
+
+    environment:
+      OPA_URL: http://opa:8181/v1/data/app/auth/allow
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+
+    depends_on:
+      db:
+        condition: service_healthy
+      opa:
+        condition: service_healthy
+
+    volumes:
+      - media_files:/app/media
+
+    ports:
+      - "8000:8000"
+
+    networks:
+      - backend_network
+      - frontend_network
+
+    security_opt:
+      - no-new-privileges:true
+
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/admin/login/')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+
+  # ============================================================
+  # React Frontend (Nginx)
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+
+    restart: unless-stopped
+
+    depends_on:
+      - backend
+
+    ports:
+      - "3000:80"
+
+    networks:
+      - frontend_network
+
+    security_opt:
+      - no-new-privileges:true
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+
+# ============================================================
+# Networks
+# ============================================================
+networks:
+  backend_network:
+  frontend_network:
+
+
+# ============================================================
+# Volumes
+# ============================================================
+volumes:
+  postgres_data:
+  media_files:
