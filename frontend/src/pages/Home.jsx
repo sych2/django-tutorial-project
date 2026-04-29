@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
 const CATEGORIES = [
@@ -18,6 +18,13 @@ const STATS = [
   { value: '98%', label: 'Uptime Guarantee' },
 ]
 
+const OWNER_PERKS = [
+  { icon: '📋', title: 'Easy Listings', desc: 'Post your machine in under 5 minutes with our guided form.' },
+  { icon: '💰', title: 'Earn More', desc: 'Set your own daily, hourly or weekly rate in KES.' },
+  { icon: '📍', title: 'Local Reach', desc: 'Get discovered by contractors in your county and beyond.' },
+  { icon: '🔒', title: 'Secure Bookings', desc: 'We verify renters so your equipment is always in good hands.' },
+]
+
 const s = {
   page: { background: '#0a0a0a', minHeight: '100vh', paddingTop: '64px', color: '#f0f0f0' },
   hero: { minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0a0a0a 0%, #111 100%)' },
@@ -29,11 +36,19 @@ const s = {
   heroSub: { color: '#888', fontSize: '1.05rem', lineHeight: 1.7, maxWidth: '500px', marginBottom: '2rem' },
   btnPrimary: { display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.75rem', background: '#E8580C', color: '#fff', fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', borderRadius: '2px', cursor: 'pointer', textDecoration: 'none' },
   btnSecondary: { display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.75rem', background: 'transparent', color: '#f0f0f0', fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '2px', cursor: 'pointer', textDecoration: 'none' },
+  btnOutlineOrange: { display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.75rem', background: 'transparent', color: '#E8580C', fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', border: '1px solid #E8580C', borderRadius: '2px', cursor: 'pointer', textDecoration: 'none' },
 }
 
 export default function Home() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+
+  // ── Read auth state from wherever your app stores it ──────────────
+  // Adjust this to match how YOUR app tracks login state, e.g.:
+  //   const { user } = useContext(AuthContext)
+  //   const isAuthenticated = !!user
+  const isAuthenticated = !!localStorage.getItem('access_token')
 
   useEffect(() => {
     api.get('/home/api/products/')
@@ -42,9 +57,18 @@ export default function Home() {
       .finally(() => setLoading(false))
   }, [])
 
+  const handlePostMachine = () => {
+    if (isAuthenticated) {
+      navigate('/post-machine')
+    } else {
+      // Preserve intended destination so user lands on form after login
+      navigate('/login', { state: { next: '/post-machine' } })
+    }
+  }
+
   return (
     <div style={s.page}>
-      {/* Hero */}
+      {/* ── Hero ──────────────────────────────────────────────────── */}
       <section style={s.hero}>
         <div style={s.heroGrid} />
         <div style={s.heroGlow} />
@@ -61,11 +85,15 @@ export default function Home() {
           <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
             <Link to="/products" style={s.btnPrimary}>Browse Equipment</Link>
             <Link to="/register" style={s.btnSecondary}>Get Started Free</Link>
+            {/* Auth-aware post machine button */}
+            <button onClick={handlePostMachine} style={s.btnOutlineOrange}>
+              + List Your Machine
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
+      {/* ── Stats ─────────────────────────────────────────────────── */}
       <section style={{background: '#111', borderTop: '1px solid #1e1e1e', borderBottom: '1px solid #1e1e1e'}}>
         <div style={{...s.container, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)'}}>
           {STATS.map((stat, i) => (
@@ -77,7 +105,57 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categories */}
+      {/* ── List Your Machine CTA ──────────────────────────────────── */}
+      <section style={{padding: '6rem 0', background: '#0d0d0d', borderBottom: '1px solid #1e1e1e', position: 'relative', overflow: 'hidden'}}>
+        {/* Subtle background glow */}
+        <div style={{position: 'absolute', bottom: '-20%', left: '-5%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(232,88,12,0.07) 0%, transparent 70%)', pointerEvents: 'none'}} />
+
+        <div style={{...s.container, position: 'relative', zIndex: 1}}>
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center'}}>
+
+            {/* Left: copy */}
+            <div>
+              <span style={s.label}>For Machine Owners</span>
+              <h2 style={{fontFamily: 'monospace', fontSize: 'clamp(2rem, 4vw, 3rem)', color: '#fff', fontWeight: 'bold', lineHeight: 1.1, marginBottom: '1.25rem'}}>
+                GOT HEAVY<br />
+                <span style={{color: '#E8580C'}}>EQUIPMENT</span><br />
+                SITTING IDLE?
+              </h2>
+              <p style={{color: '#888', fontSize: '0.95rem', lineHeight: 1.8, marginBottom: '2rem', maxWidth: '440px'}}>
+                Put your machines to work. List your forklift, excavator, crane or any heavy equipment on IronGrid and start earning from contractors across Kenya and beyond.
+              </p>
+              <button onClick={handlePostMachine} style={{...s.btnPrimary, fontSize: '1rem', padding: '0.9rem 2rem'}}>
+                {isAuthenticated ? '+ Post Your Machine' : '+ Get Started — It\'s Free'}
+              </button>
+              {!isAuthenticated && (
+                <p style={{marginTop: '0.75rem', fontSize: '0.8rem', color: '#555', fontFamily: 'monospace'}}>
+                  Already have an account?{' '}
+                  <button
+                    onClick={handlePostMachine}
+                    style={{background: 'none', border: 'none', color: '#E8580C', cursor: 'pointer', fontFamily: 'monospace', fontSize: '0.8rem', padding: 0, textDecoration: 'underline'}}
+                  >
+                    Log in to list
+                  </button>
+                </p>
+              )}
+            </div>
+
+            {/* Right: perks grid */}
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', border: '1px solid #1e1e1e'}}>
+              {OWNER_PERKS.map((perk) => (
+                <div key={perk.title} style={{padding: '1.75rem', background: '#111'}}>
+                  <div style={{fontSize: '1.5rem', marginBottom: '0.75rem'}}>{perk.icon}</div>
+                  <h3 style={{fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 600, color: '#fff', marginBottom: '0.4rem'}}>{perk.title}</h3>
+                  <p style={{fontSize: '0.8rem', color: '#555', lineHeight: 1.6}}>{perk.desc}</p>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── Categories ────────────────────────────────────────────── */}
       <section style={{padding: '6rem 0'}}>
         <div style={s.container}>
           <span style={s.label}>What We Offer</span>
@@ -94,7 +172,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products */}
+      {/* ── Featured Products ──────────────────────────────────────── */}
       <section style={{padding: '6rem 0', background: '#111'}}>
         <div style={s.container}>
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem'}}>
@@ -141,7 +219,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* ── Bottom CTA ────────────────────────────────────────────── */}
       <section style={{padding: '6rem 0', borderTop: '1px solid #1e1e1e'}}>
         <div style={{...s.container, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '3rem', flexWrap: 'wrap'}}>
           <div>
@@ -152,6 +230,7 @@ export default function Home() {
           <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
             <Link to="/register" style={s.btnPrimary}>Create Free Account</Link>
             <Link to="/products" style={s.btnSecondary}>Browse Catalogue</Link>
+            <button onClick={handlePostMachine} style={s.btnOutlineOrange}>+ List Your Machine</button>
           </div>
         </div>
       </section>

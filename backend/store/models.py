@@ -13,18 +13,6 @@ class Category(models.Model):
         return self.name
 
 
-class Customer(models.Model):
-    account = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="customer_profile",
-        null=True,
-        blank=True,
-    )
-    phone = models.CharField(max_length=50)
-
-    def __str__(self):
-        return f"{self.account.first_name} {self.account.last_name}"
 
 
 class Product(models.Model):
@@ -47,13 +35,15 @@ class Product(models.Model):
 class Order(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     customer = models.ForeignKey(
-        Customer, on_delete=models.CASCADE, related_name="orders"
-    )
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders")
+
     quantity = models.PositiveIntegerField(default=1)
     address = models.CharField(max_length=255)
     phone = models.CharField(max_length=50)
     date = models.DateTimeField(default=timezone.now)
     status = models.BooleanField(default=False)
+
+
 
     def __str__(self):
         return f"Order #{self.id} - {self.product.name}"
