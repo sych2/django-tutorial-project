@@ -14,4 +14,8 @@ urlpatterns = [
     path("cart/", include("cart.urls")),
     path("home/", include("store.urls")),
     path('health/', health),
+    path('accounts/', include('allauth.urls')),
+    path('api/auth/google/token/', GoogleOAuthJWTExchangeView.as_view()),
+    path('api/auth/complete-profile/', CompleteProfileView.as_view()),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

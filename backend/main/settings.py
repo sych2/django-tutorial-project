@@ -56,13 +56,40 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
+    # removed duplicate CorsMiddleware that was here
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "allauth.account.middleware.AccountMiddleware",            # ✅ add this
     "main.authorization.middleware.OPAAuthorizationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+
+ACCOUNT_ADAPTER = 'authentication.adapters.GoogleAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'authentication.adapters.GoogleSocialAccountAdapter'
+SOCIALACCOUNT_LOGIN_ON_GET = False
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+
 
 OPA_URL = "http://localhost:8181/v1/data/app/auth/allow"
 OPA_TIMEOUT = 1
