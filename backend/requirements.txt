@@ -11,7 +11,7 @@ djangorestframework_simplejwt==5.5.1
 gunicorn==23.0.0
 idna==3.11
 jmespath==1.1.0
-pillow==12.1.1
+pillow==12.1.1pillow>=12.2.0
 psycopg2-binary==2.9.11
 PyJWT==2.12.1
 python-dateutil==2.9.0.post0

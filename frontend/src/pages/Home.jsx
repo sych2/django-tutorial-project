@@ -44,10 +44,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  // ── Read auth state from wherever your app stores it ──────────────
-  // Adjust this to match how YOUR app tracks login state, e.g.:
-  //   const { user } = useContext(AuthContext)
-  //   const isAuthenticated = !!user
+  // ── Adjust to match how your app tracks auth ──────────────────────
+  // If using AuthContext: const { user } = useContext(AuthContext)
+  //                       const isAuthenticated = !!user
   const isAuthenticated = !!localStorage.getItem('access_token')
 
   useEffect(() => {
@@ -57,17 +56,28 @@ export default function Home() {
       .finally(() => setLoading(false))
   }, [])
 
+  // Authenticated → /post-machine, unauthenticated → /login (with redirect back)
   const handlePostMachine = () => {
     if (isAuthenticated) {
       navigate('/post-machine')
     } else {
-      // Preserve intended destination so user lands on form after login
       navigate('/login', { state: { next: '/post-machine' } })
+    }
+  }
+
+  // Authenticated → /post-machine (change to /dashboard when ready)
+  // Unauthenticated → /register
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      navigate('/post-machine')
+    } else {
+      navigate('/register')
     }
   }
 
   return (
     <div style={s.page}>
+
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <section style={s.hero}>
         <div style={s.heroGrid} />
@@ -84,8 +94,12 @@ export default function Home() {
           </p>
           <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
             <Link to="/products" style={s.btnPrimary}>Browse Equipment</Link>
-            <Link to="/register" style={s.btnSecondary}>Get Started Free</Link>
-            {/* Auth-aware post machine button */}
+
+            {/* Shows "Post a Machine" when logged in, "Get Started Free" when not */}
+            <button onClick={handleGetStarted} style={s.btnSecondary}>
+              {isAuthenticated ? 'Post a Machine' : 'Get Started Free'}
+            </button>
+
             <button onClick={handlePostMachine} style={s.btnOutlineOrange}>
               + List Your Machine
             </button>
@@ -107,9 +121,7 @@ export default function Home() {
 
       {/* ── List Your Machine CTA ──────────────────────────────────── */}
       <section style={{padding: '6rem 0', background: '#0d0d0d', borderBottom: '1px solid #1e1e1e', position: 'relative', overflow: 'hidden'}}>
-        {/* Subtle background glow */}
         <div style={{position: 'absolute', bottom: '-20%', left: '-5%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(232,88,12,0.07) 0%, transparent 70%)', pointerEvents: 'none'}} />
-
         <div style={{...s.container, position: 'relative', zIndex: 1}}>
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center'}}>
 
@@ -125,7 +137,7 @@ export default function Home() {
                 Put your machines to work. List your forklift, excavator, crane or any heavy equipment on IronGrid and start earning from contractors across Kenya and beyond.
               </p>
               <button onClick={handlePostMachine} style={{...s.btnPrimary, fontSize: '1rem', padding: '0.9rem 2rem'}}>
-                {isAuthenticated ? '+ Post Your Machine' : '+ Get Started — It\'s Free'}
+                {isAuthenticated ? '+ Post Your Machine' : "+ Get Started — It's Free"}
               </button>
               {!isAuthenticated && (
                 <p style={{marginTop: '0.75rem', fontSize: '0.8rem', color: '#555', fontFamily: 'monospace'}}>
@@ -228,12 +240,18 @@ export default function Home() {
             <p style={{color: '#888', fontSize: '0.95rem', lineHeight: 1.7, maxWidth: '480px'}}>Join thousands of contractors and mining operations who trust IronGrid.</p>
           </div>
           <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
-            <Link to="/register" style={s.btnPrimary}>Create Free Account</Link>
+
+            {/* Shows "Post a Machine" when logged in, "Create Free Account" when not */}
+            <button onClick={handleGetStarted} style={s.btnPrimary}>
+              {isAuthenticated ? 'Post a Machine' : 'Create Free Account'}
+            </button>
+
             <Link to="/products" style={s.btnSecondary}>Browse Catalogue</Link>
             <button onClick={handlePostMachine} style={s.btnOutlineOrange}>+ List Your Machine</button>
           </div>
         </div>
       </section>
+
     </div>
   )
 }

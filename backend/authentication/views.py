@@ -83,3 +83,28 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+User = get_user_model()
+
+class GoogleOAuthJWTExchangeView(APIView):
+    """
+    Called after allauth completes Google OAuth.
+    Returns JWT tokens for the authenticated session user.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'No authenticated session found. Complete Google OAuth first.'},
+                status=401
+            )
+
+        refresh = RefreshToken.for_user(request.user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': request.user.pk,
+                'email': request.user.email,
+            }
+        })
