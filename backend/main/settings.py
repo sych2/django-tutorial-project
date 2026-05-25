@@ -83,8 +83,7 @@ SOCIALACCOUNT_PROVIDERS = {
 ACCOUNT_ADAPTER = 'authentication.adapters.GoogleAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'authentication.adapters.GoogleSocialAccountAdapter'
 SOCIALACCOUNT_LOGIN_ON_GET = False
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
