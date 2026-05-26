@@ -41,10 +41,13 @@ public_prefixes := {
     "/api/auth/register/",
     "/api/auth/login/",
     "/api/auth/token/",
-    "/home/api/products/",    # ✅ public product browsing
-    "/home/api/categories/",  # ✅ public category listing
+    "/home/api/products/",
+    "/home/api/categories/",
+    "/accounts/",
+    "/api/auth/google/",
+    "/api/auth/complete-profile/",
+    "/api/auth/admin-session/",
 }
-
 
 allow if {
     some prefix in public_prefixes
@@ -82,9 +85,9 @@ authenticated_prefixes := {
     "/api/auth/profile/",
     "/api/auth/logout/",
     "/home/api/orders/",
-    "/home/api/products/create/",   # ✅ add
-    "/home/api/products/",          # ✅ add (covers update, delete, detail)
-    "/home/api/categories/",        # ✅ add
+    "/home/api/products/create/",
+    "/home/api/products/",
+    "/home/api/categories/",
 }
 
 allow if {
